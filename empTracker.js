@@ -13,7 +13,7 @@ var connection = mysql.createConnection({
 
   connection.connect();
 
-  connection.query('SELECT * from role', function (error, results, fields) {
+  connection.query('SELECT * from employee', function (error, results, fields) {
     if (error) throw error;
     console.table(results);
   });
