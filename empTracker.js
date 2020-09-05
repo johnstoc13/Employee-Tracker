@@ -14,10 +14,10 @@ var connection = mysql.createConnection({
 
 connection.connect(function(err) {
   if (err) throw err;
-  startSearch();
+  init();
 });
 
-function startSearch() {
+function init() {
   inquirer
     .prompt({
       name: "action",
@@ -51,7 +51,7 @@ function startSearch() {
         break;
 
       case "Remove Employee":
-        songSearch();
+        removeEmployee();
         break;
 
       case "Exit":
@@ -62,10 +62,11 @@ function startSearch() {
 }
 
 const viewAll = () => {
-  connection.query('SELECT * from employee', function (err, results) {
+  connection.query('SELECT first_name, last_name, title, salary from employee INNER JOIN role ON employee.role_ID = role.id;', function (err, results) {
     if (err) throw err;
+    console.log("\n");
     console.table(results);
-    startSearch();
+    init();
   });
 }
 
@@ -87,31 +88,56 @@ const promptQuestions = (type) => {
 
 const addEmployee = () => {
   promptQuestions("addEmployee").then((res) => {
-
+    // Variable to get role_id
     let roleNumber;
-    console.log(res.role);
-
-    if (res.role= "Sales Lead") {
-      // console.log("You chose sales lead!");
+    // Run through all responses to set the role_id
+    if (res.role == "Sales Lead") {
       roleNumber = "1";
-    } else if (res.role = "Salesperson") {
+    } else if (res.role == "Salesperson") {
       roleNumber = "2";
-    } else if (res.role = "Lead Engineer") {
+    } else if (res.role == "Lead Engineer") {
       roleNumber = "3";
-    } else if (res.role = "Software Engineer") {
+    } else if (res.role == "Software Engineer") {
       roleNumber = "4";
-    } else if (res.role = "Accountant") {
+    } else if (res.role == "Accountant") {
       roleNumber = "5";
-    } else if (res.role = "Legal Team Lead") {
+    } else if (res.role == "Legal Team Lead") {
       roleNumber = "6";
     } else roleNumber = "7";
+    const query = `INSERT INTO employee (first_name, last_name, role_id) VALUES ("${res.firstname}", "${res.lastname}", ${roleNumber})`;
+    connection.query(query, function (err) {
+      if (err) throw err;
+      console.log(`Added ${res.firstname} ${res.lastname} to the database!`);
+      init();
+    })
+  });
+}
 
-    // console.log(roleNumber);
+const removeEmployee = () => {
+  // inquirer.prompt({
+  //   name: "delete",
+  //   type: "list",
+  //   message: "Which employee would you like to remove",
+  //   choices: viewEmployees()
+  // })
+  viewEmployees();
+  // console.log("Made it this far!!!");
+}
 
-    const query1 = `INSERT INTO employee (first_name, last_name, role_id) VALUES ("${res.firstname}", "${res.lastname}", ${res.role})`;
-    const query2 = `INSERT INTO role ()`
-    // console.log(res.role);
-    // console.log(query1);
-    // connection.query1('INSERT name')
+
+const viewEmployees = () => {
+  connection.query('SELECT first_name, last_name from employee', function (err, results) {
+    if (err) throw err;
+    // console.table(results);
+
+    let empArray = JSON.stringify(results);
+    for (let i = 0; i < empArray.length; i++) {
+      const newResults = empArray[i];
+      console.log(newResults);
+      
+    }
+    // console.log(JSON.stringify(results));
+    // console.log(results);
+
   });
 }
