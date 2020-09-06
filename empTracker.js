@@ -5,14 +5,14 @@ const consoleTable = require("console.table");
 const {Employee, Role, Department} = require("./lib/Creators");
 const questions = require("./utils/questions");
 
-var connection = mysql.createConnection({
+const connection = mysql.createConnection({
     host     : 'localhost',
     user     : 'root',
     password : 'root1234',
     database : 'empTracker_DB'
 });
 
-connection.connect(function(err) {
+connection.connect((err) => {
   if (err) throw err;
   init();
 });
@@ -32,7 +32,7 @@ function init() {
         "Exit"
       ]
     })
-    .then(function(answer) {
+    .then((answer) => {
       switch (answer.action) {
       case "View All Employees":
         viewAll();
@@ -62,10 +62,11 @@ function init() {
 }
 
 const viewAll = () => {
-  connection.query('SELECT first_name, last_name, title, salary from employee INNER JOIN role ON employee.role_ID = role.id;', function (err, results) {
+  let query = 'SELECT first_name, last_name, title, salary from employee INNER JOIN role ON employee.role_ID = role.id;'
+  connection.query(query, function (err, res) {
     if (err) throw err;
     console.log("\n");
-    console.table(results);
+    console.table(res);
     init();
   });
 }
@@ -114,30 +115,30 @@ const addEmployee = () => {
 }
 
 const removeEmployee = () => {
+  let empArray = [];
+  const query = 'SELECT concat(first_name, " ", last_name) AS employee FROM employee ORDER BY Employee ASC'
+  connection.query(query, (err, res) => {
+    if (err) throw err;
+    empArray = res.map(obj => {
+      return `${obj.employee}`;
+    })
+    console.log("#2", empArray);
+  });
   // inquirer.prompt({
-  //   name: "delete",
+  //   name: "employee",
   //   type: "list",
-  //   message: "Which employee would you like to remove",
-  //   choices: viewEmployees()
+  //   message: "Which employee would you like to remove?",
+  //   choices: empArray
   // })
-  viewEmployees();
   // console.log("Made it this far!!!");
 }
 
-
 const viewEmployees = () => {
+  let newArray = [];
   connection.query('SELECT first_name, last_name from employee', function (err, results) {
     if (err) throw err;
-    // console.table(results);
-
-    let empArray = JSON.stringify(results);
-    for (let i = 0; i < empArray.length; i++) {
-      const newResults = empArray[i];
-      console.log(newResults);
-      
-    }
-    // console.log(JSON.stringify(results));
-    // console.log(results);
-
+    newArray = results.map(obj => {
+      return `${obj.first_name} ${obj.last_name}`;
+    })
   });
 }
