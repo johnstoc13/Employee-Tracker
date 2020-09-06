@@ -17,9 +17,9 @@ connection.connect((err) => {
   init();
 });
 
+// Main function to start program
 function init() {
-  inquirer
-    .prompt({
+  inquirer.prompt({
       name: "action",
       type: "list",
       message: "What would you like to do?",
@@ -68,12 +68,16 @@ function init() {
     });
 }
 
+// Query to view all employees and data
+// Still need to get manager info  ******************************
 const viewAll = () => {
   let query = 'SELECT first_name, last_name, title, salary from employee INNER JOIN role ON employee.role_ID = role.id;'
   connection.query(query, function (err, res) {
     if (err) throw err;
     console.log("\n");
     console.table(res);
+
+    // Start program over
     init();
   });
 }
@@ -86,8 +90,10 @@ const promptQuestions = (type) => {
 
 const addEmployee = () => {
   promptQuestions("addEmployee").then((res) => {
+
     // Variable to get role_id
     let roleNumber;
+
     // Run through all responses to set the role_id
     if (res.role == "Sales Lead") {
       roleNumber = "1";
@@ -102,12 +108,14 @@ const addEmployee = () => {
     } else if (res.role == "Legal Team Lead") {
       roleNumber = "6";
     } else roleNumber = "7";
+
     // Query to add employee
     const query = `INSERT INTO employee (first_name, last_name, role_id) VALUES ("${res.firstname}", "${res.lastname}", ${roleNumber})`;
     connection.query(query, function (err) {
       if (err) throw err;
       console.log(`Added ${res.firstname} ${res.lastname} to the database!`);
-      // Start program over from beginning
+      
+      // Start program over
       init();
     })
   });
@@ -117,17 +125,13 @@ const removeEmployee = () => {
   // Set up empty arrays to use later
   let empArray = [];
   let idArray = [];
+
   // Query for IDs and Names in ASC order
   const query = 'SELECT employee.id, concat(first_name, " ", last_name) AS employee FROM employee ORDER BY Employee ASC'
   connection.query(query, (err, res) => {
     if (err) throw err;
-    // console.log("#1", res);
-    
     empArray = res.map(obj => obj.employee);
-    // console.log("#2", empArray);
-
     idArray = res.map(obj => (`${obj.id}, ${obj.employee}`));
-    // console.log("#3", idArray);
 
     // Ask user which employee to remove
     inquirer.prompt({
@@ -136,17 +140,21 @@ const removeEmployee = () => {
       message: "Which employee would you like to remove?",
       choices: empArray
     }).then((emp) => {
+
       // Then loop through all choices to match user choice
       idArray.forEach(person => {
+        // Credit:  Ask BCS helped me find a way to compare choices by using SPLIT
         let choices = person.split(",")[1].trim();
         if (choices == emp.employee) {
           let chosenId = person.split(",")[0];
+
           // Query to remove the chosen employee
           const query = `DELETE from employee WHERE id = ${chosenId};`
           connection.query(query, (err, res) => {
             if (err) throw err;
             console.log(`\n ${emp.employee} successfully removed! \n`);
-            // Start program over from beginning
+
+            // Start program over
             init();
           })
         }
