@@ -116,22 +116,59 @@ const addEmployee = () => {
 
 const removeEmployee = () => {
   let empArray = [];
-  const query = 'SELECT concat(first_name, " ", last_name) AS employee FROM employee ORDER BY Employee ASC'
+  let idArray = [];
+  const query = 'SELECT employee.id, concat(first_name, " ", last_name) AS employee FROM employee ORDER BY Employee ASC'
   connection.query(query, (err, res) => {
     if (err) throw err;
-    empArray = res.map(obj => {
-      return `${obj.employee}`;
-    })
+    console.log("#1", res);
+
+    // empArray.push(res);
+    // console.log("HEEEERREE", empArray);
+
+    empArray = res.map(obj => obj.employee);
     console.log("#2", empArray);
+
+    idArray = res.map(obj => (`${obj.id}, "${obj.employee}"`));
+    console.log("#3", idArray);
+    
+
+
+    inquirer.prompt({
+      name: "employee",
+      type: "list",
+      message: "Which employee would you like to remove?",
+      choices: empArray
+    }).then((emp) => {
+      console.log("#4", emp);
+      console.log("THIS", emp.employee);
+
+      function getKeyByValue(object, value) {
+        return Object.keys(object).find(key => object[key] === value);
+      }
+      const map = idArray;
+      console.log(getKeyByValue(map, emp.employee));
+      // let chosenId = idArray.find(element => element == emp.employee);
+        
+          // console.log("This is what I found!", id);
+          // return element;
+        
+      
+      // console.log("#6", chosenId);
+      // if (emp.employee == obj.employee)
+    })
+    // console.log("#2", empArray);
   });
-  // inquirer.prompt({
-  //   name: "employee",
-  //   type: "list",
-  //   message: "Which employee would you like to remove?",
-  //   choices: empArray
-  // })
   // console.log("Made it this far!!!");
 }
+
+// Need a function to call in "choices" that loops through
+// array of all employees (with IDs attached) and then 
+// displays only the employees as choices. Then compare (emp)
+// to that choice and delete using a SQL query WHERE employee ID = ID
+
+
+
+
 
 const viewEmployees = () => {
   let newArray = [];
