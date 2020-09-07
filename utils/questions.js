@@ -1,8 +1,8 @@
 // Empty arrays to check for duplication
-const ids = [];
-const emails = [];
-const offices = [];
-const githubs = [];
+// const ids = [];
+// const emails = [];
+// const offices = [];
+// const githubs = [];
 
 // Credit:  https://www.npmjs.com/package/inquirer
 // Credit:  https://stackoverflow.com/questions/35499782/how-to-accept-space-in-regex
@@ -122,37 +122,40 @@ const intern = [
     },
 ];
 
-const addEmployee = [
-    {
-        type: "input",
-        name: "firstname",
-        message: "What is the employee's first name?"
-    },
-    {
-        type: "input",
-        name: "lastname",
-        message: "What is the employee's last name?"
-    },
-    {
-        type: "list",
-        name: "role",
-        message: "What is the employee's role?",
-        choices: [
-            "Sales Lead",
-            "Salesperson",
-            "Lead Engineer",
-            "Software Engineer",
-            "Accountant",
-            "Legal Team Lead",
-            "Lawyer"
-        ]
-    },
-    {
-        type: "input",
-        name: "manager",
-        message: "Who is the employee's manager?"
-    },
-];
+const roles = [
+    "Sales Lead",
+    "Salesperson",
+    "Lead Engineer",
+    "Software Engineer",
+    "Accountant",
+    "Legal Team Lead",
+    "Lawyer"
+]
+// const managerArray = require("../empTracker");
+// const addEmployee = [
+//     {
+//         type: "input",
+//         name: "firstname",
+//         message: "What is the employee's first name?"
+//     },
+//     {
+//         type: "input",
+//         name: "lastname",
+//         message: "What is the employee's last name?"
+//     },
+//     {
+//         type: "list",
+//         name: "role",
+//         message: "What is the employee's role?",
+//         choices: roles
+//     },
+//     {
+//         type: "list",
+//         name: "manager",
+//         message: "Who is the employee's manager?",
+//         choices: managerArray
+//     }
+// ];
 
 const startQuestions = [
     {
@@ -170,4 +173,4 @@ const startQuestions = [
     },
 ];
 
-module.exports = { ids, emails, offices, githubs, manager, intern, addEmployee, startQuestions };
+module.exports = { roles, startQuestions };
