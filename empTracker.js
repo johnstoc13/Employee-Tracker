@@ -43,12 +43,12 @@ function init() {
           break;
 
         case "View All Employees By Department":
-          // Not Started
+          // COMPLETE!!!
           viewAllByDepartment();
           break;
 
         case "View All Employees By Manager":
-          // Not Started
+          // COMPLETE!!!
           viewAllByManager();
           break;
 
@@ -87,6 +87,34 @@ const viewAll = () => {
     init();
   });
 }
+
+// Query to view all employees by department
+const viewAllByDepartment = () => {
+  let query = 'SELECT department.name AS Department, e.first_name AS "First Name", e.last_name AS "Last Name", role.title AS Title, role.salary AS Salary, IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN Department ON role.department_id = department.id ORDER BY department.name, e.first_name ASC;'
+  connection.query(query, function (err, res) {
+    if (err) throw err;
+    console.log("\n");
+    console.table(res);
+
+    // Start program over
+    init();
+  });
+}
+
+// Query to view all employees by manager
+const viewAllByManager = () => {
+  let query = 'SELECT IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager, e.first_name AS "First Name", e.last_name AS "Last Name", role.title AS Title, role.salary AS Salary, department.name AS Department FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN Department ON role.department_id = department.id ORDER BY m.first_name, e.first_name ASC;'
+  connection.query(query, function (err, res) {
+    if (err) throw err;
+    console.log("\n");
+    console.table(res);
+
+    // Start program over
+    init();
+  });
+}
+
+
 
 // ******* NOT USING CURRENTLY *******
 // Prompt user for questions
