@@ -6,6 +6,8 @@ const async = require("async");
 const { Employee, Role, Department } = require("./lib/Creators");
 const questions = require("./utils/questions");
 
+const roleQuery = 'SELECT id, title FROM role;';
+
 const connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
@@ -108,7 +110,6 @@ const viewDepartments = () => {
   connection.query(query, function (err, res) {
     if (err) throw err;
     deptArray = res.map(obj => (`${obj.department}`));
-    console.log(deptArray);
     inquirer.prompt({
       name: "department",
       type: "list",
@@ -175,78 +176,64 @@ const addEmployee = () => {
     mgrIdArray = res.map(obj => (`${obj.id}, ${obj.manager}`));
     // console.log(mgrArray);
     // console.log(mgrIdArray);
+    connection.query(roleQuery, (err, result) => {
+      if (err) throw err;
+      roleArray = result.map(obj => obj.title);
+      roleIdArray = result.map(obj => `${obj.id}, ${obj.title}`);
 
-    inquirer.prompt(
-      [
-        {
-          type: "input",
-          name: "firstname",
-          message: "What is the employee's first name?"
-        },
-        {
-          type: "input",
-          name: "lastname",
-          message: "What is the employee's last name?"
-        },
-        {
-          type: "list",
-          name: "role",
-          message: "What is the employee's role?",
-          choices: [
-            "Sales Lead",
-            "Salesperson",
-            "Lead Engineer",
-            "Software Engineer",
-            "Accountant",
-            "Legal Team Lead",
-            "Lawyer"
-          ]
-        },
-        {
-          type: "list",
-          name: "manager",
-          message: "Who is the employee's manager?",
-          choices: mgrArray
-        }
-      ])
-      .then((res) => {
-
-        // Variable to get role_id
-        let roleNumber;
-
-        // Run through all responses to set the role_id
-        if (res.role == "Sales Lead") {
-          roleNumber = "1";
-        } else if (res.role == "Salesperson") {
-          roleNumber = "2";
-        } else if (res.role == "Lead Engineer") {
-          roleNumber = "3";
-        } else if (res.role == "Software Engineer") {
-          roleNumber = "4";
-        } else if (res.role == "Accountant") {
-          roleNumber = "5";
-        } else if (res.role == "Legal Team Lead") {
-          roleNumber = "6";
-        } else roleNumber = "7";
-
-        mgrIdArray.forEach(person => {
-          // Credit:  Ask BCS helped me find a way to compare choices by using SPLIT
-          let choices = person.split(",")[1].trim();
-          if (choices == res.manager) {
-            let managerId = person.split(",")[0];
-
-            // Query to add employee
-            const query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ("${res.firstname}", "${res.lastname}", ${roleNumber}, ${managerId})`;
-            connection.query(query, function (err) {
-              if (err) throw err;
-              console.log(`\n Added ${res.firstname} ${res.lastname} to the database! \n`);
-
-              // Start program over
-              init();
-            });
+      inquirer.prompt(
+        [
+          {
+            type: "input",
+            name: "firstname",
+            message: "What is the employee's first name?"
+          },
+          {
+            type: "input",
+            name: "lastname",
+            message: "What is the employee's last name?"
+          },
+          {
+            type: "list",
+            name: "role",
+            message: "What is the employee's role?",
+            choices: roleArray
+          },
+          {
+            type: "list",
+            name: "manager",
+            message: "Who is the employee's manager?",
+            choices: mgrArray
           }
+        ])
+        .then((emp) => {
+
+          mgrIdArray.forEach(person => {
+            // Credit:  Ask BCS helped me find a way to compare choices by using SPLIT
+            let choices = person.split(",")[1].trim();
+            if (choices == emp.manager) {
+              let managerId = person.split(",")[0];
+
+              roleIdArray.forEach(role => {
+                let roleChoice = role.split(",")[1].trim();
+                if (roleChoice == emp.role) {
+                  let roleId = role.split(",")[0];
+
+                  // Query to add employee
+                  const query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ("${emp.firstname}", "${emp.lastname}", ${roleId}, ${managerId})`;
+                  connection.query(query, function (err) {
+                    if (err) throw err;
+                    console.log(`\n Added ${emp.firstname} ${emp.lastname} to the database! \n`);
+
+                    // Start program over
+                    init();
+                  });
+                }
+              });
+            }
+          });
         });
-      });
+    });
   });
 };
 
@@ -254,7 +241,7 @@ const addNewRole = () => {
 
   let deptArray = [];
   let deptIdArray = [];
-  let query = 'SELECT DISTINCT department.id, department.name AS department FROM employee e LEFT JOIN role ON e.role_id = role.id LEFT JOIN Department ON role.department_id = department.id;';
+  let query = 'SELECT id, name AS department FROM department;';
   connection.query(query, function (err, res) {
     if (err) throw err;
     deptArray = res.map(obj => (`${obj.department}`));
@@ -366,7 +353,6 @@ const updateEmployeeRole = () => {
     empArray = res.map(obj => obj.employee);
     idArray = res.map(obj => (`${obj.id}, ${obj.employee}`));
 
-    const roleQuery = 'SELECT id, title FROM role;';
     connection.query(roleQuery, (err, result) => {
       if (err) throw err;
       roleArray = result.map(obj => obj.title);
@@ -403,7 +389,7 @@ const updateEmployeeRole = () => {
                 connection.query(query, (err, res) => {
                   if (err) throw err;
                   console.log(`\n ${emp.employee}'s role successfully updated to ${emp.role}! \n`);
-    
+
                   // Start program over
                   init();
                 });
