@@ -4,8 +4,6 @@
 // const offices = [];
 // const githubs = [];
 
-// Credit:  https://www.npmjs.com/package/inquirer
-// Credit:  https://stackoverflow.com/questions/35499782/how-to-accept-space-in-regex
 // Validation functions
 const validateName = (name) => {
     const namePattern = /^[a-zA-Z]+(?:\s[a-zA-Z]+)?$/;
@@ -121,56 +119,3 @@ const intern = [
         validate: validateSchool
     },
 ];
-
-const roles = [
-    "Sales Lead",
-    "Salesperson",
-    "Lead Engineer",
-    "Software Engineer",
-    "Accountant",
-    "Legal Team Lead",
-    "Lawyer"
-]
-// const managerArray = require("../empTracker");
-// const addEmployee = [
-//     {
-//         type: "input",
-//         name: "firstname",
-//         message: "What is the employee's first name?"
-//     },
-//     {
-//         type: "input",
-//         name: "lastname",
-//         message: "What is the employee's last name?"
-//     },
-//     {
-//         type: "list",
-//         name: "role",
-//         message: "What is the employee's role?",
-//         choices: roles
-//     },
-//     {
-//         type: "list",
-//         name: "manager",
-//         message: "Who is the employee's manager?",
-//         choices: managerArray
-//     }
-// ];
-
-const startQuestions = [
-    {
-        type: "list",
-        name: "start",
-        message: "What would you like to do?",
-        choices: [
-            "View All Employees",
-            "View All Employees By Department",
-            "View All Employees By Manager",
-            "Add Employee",
-            "Remove Employee",
-            "Exit"
-        ]
-    },
-];
-
-module.exports = { roles, startQuestions };
