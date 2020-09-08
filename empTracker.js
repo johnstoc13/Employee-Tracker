@@ -1,6 +1,7 @@
 const inquirer = require("inquirer");
 const mysql = require("mysql");
 const consoleTable = require("console.table")
+const async = require("async");
 
 const { Employee, Role, Department } = require("./lib/Creators");
 const questions = require("./utils/questions");
@@ -30,6 +31,7 @@ function init() {
       "View Manager Database",
       "Add Employee",
       "Add New Role",
+      "Add New Department",
       "Update Employee Role",
       "Remove Employee",
       "Exit"
@@ -61,6 +63,11 @@ function init() {
         case "Add New Role":
           // COMPLETE!!!
           addNewRole();
+          break;
+
+        case "Add New Department":
+          // COMPLETE!!!
+          addNewDepartment();
           break;
 
         case "Update Employee Role":
@@ -97,10 +104,11 @@ const viewAll = () => {
 // Query to view all departments
 const viewDepartments = () => {
 
-  let query = 'SELECT DISTINCT department.name AS department FROM employee e LEFT JOIN role ON e.role_id = role.id LEFT JOIN Department ON role.department_id = department.id;';
+  let query = 'SELECT name AS department FROM department;';
   connection.query(query, function (err, res) {
     if (err) throw err;
     deptArray = res.map(obj => (`${obj.department}`));
+    console.log(deptArray);
     inquirer.prompt({
       name: "department",
       type: "list",
@@ -112,6 +120,10 @@ const viewDepartments = () => {
         if (err) throw err;
         console.log("\n");
         console.table(res);
+
+        // ********** Could add conditional here to say 
+        // "No roles yet assigned to this DEPT"
+        // if no data   **********
 
         // Start program over
         init();
@@ -282,6 +294,22 @@ const addNewRole = () => {
   });
 };
 
+const addNewDepartment = () => {
+  inquirer.prompt({
+    name: "department",
+    type: "input",
+    message: "Which department would you like to create?"
+  }).then((answer) => {
+    let newDeptQuery = `INSERT INTO department (name) VALUE ("${answer.department}");`;
+    connection.query(newDeptQuery, (err, res) => {
+      if (err) throw err;
+      console.log(`\n ${answer.department} department successfully added!\n`);
+
+      init();
+    })
+  })
+};
+
 const removeEmployee = () => {
   // Set up empty arrays to use later
   let empArray = [];
@@ -307,10 +335,10 @@ const removeEmployee = () => {
         // Credit:  Ask BCS helped me find a way to compare choices by using SPLIT
         let choices = person.split(",")[1].trim();
         if (choices == emp.employee) {
-          let chosenId = person.split(",")[0];
+          let personId = person.split(",")[0];
 
           // Query to remove the chosen employee
-          const query = `DELETE from employee WHERE id = ${chosenId};`;
+          const query = `DELETE from employee WHERE id = ${personId};`;
           connection.query(query, (err, res) => {
             if (err) throw err;
             console.log(`\n ${emp.employee} successfully removed! \n`);
@@ -329,6 +357,7 @@ const updateEmployeeRole = () => {
   // Set up empty arrays to use later
   let empArray = [];
   let idArray = [];
+  let roleArray = [];
 
   // Query for IDs and Names in ASC order
   const query = 'SELECT employee.id, concat(first_name, " ", last_name) AS employee FROM employee ORDER BY Employee ASC';
@@ -337,64 +366,51 @@ const updateEmployeeRole = () => {
     empArray = res.map(obj => obj.employee);
     idArray = res.map(obj => (`${obj.id}, ${obj.employee}`));
 
-    // Ask user which employee to remove
-    inquirer.prompt([
-      {
-        name: "employee",
-        type: "list",
-        message: "Which employee would you like to update?",
-        choices: empArray
-      },
-      {
-        name: "role",
-        type: "list",
-        message: "Which new role would you like to use?",
-        choices: [
-          "Sales Lead",
-          "Salesperson",
-          "Lead Engineer",
-          "Software Engineer",
-          "Accountant",
-          "Legal Team Lead",
-          "Lawyer"
-        ]
-      }
-    ]).then((emp) => {
+    const roleQuery = 'SELECT id, title FROM role;';
+    connection.query(roleQuery, (err, result) => {
+      if (err) throw err;
+      roleArray = result.map(obj => obj.title);
+      roleIdArray = result.map(obj => `${obj.id}, ${obj.title}`);
 
-      // Then loop through all choices to match user choice
-      idArray.forEach(person => {
-        let choices = person.split(",")[1].trim();
-        if (choices == emp.employee) {
-          let chosenId = person.split(",")[0];
-
-          // Variable to get role_id
-          let roleNumber;
-
-          // Run through all responses to set the role_id
-          if (emp.role == "Sales Lead") {
-            roleNumber = "1";
-          } else if (emp.role == "Salesperson") {
-            roleNumber = "2";
-          } else if (emp.role == "Lead Engineer") {
-            roleNumber = "3";
-          } else if (emp.role == "Software Engineer") {
-            roleNumber = "4";
-          } else if (emp.role == "Accountant") {
-            roleNumber = "5";
-          } else if (emp.role == "Legal Team Lead") {
-            roleNumber = "6";
-          } else roleNumber = "7";
-
-          // Query to remove the chosen employee
-          const query = `UPDATE employee SET role_id = ${roleNumber} WHERE id = ${chosenId};`;
-          connection.query(query, (err, res) => {
-            if (err) throw err;
-            console.log(`\n ${emp.employee}'s role successfully updated to ${emp.role}! \n`);
-
-            // Start program over
-            init();
-          });
+      // Ask user which employee to remove
+      inquirer.prompt([
+        {
+          name: "employee",
+          type: "list",
+          message: "Which employee would you like to update?",
+          choices: empArray
+        },
+        {
+          name: "role",
+          type: "list",
+          message: "Which new role would you like to use?",
+          choices: roleArray
         }
+      ]).then((emp) => {
+
+        // Then loop through all choices to match user choice
+        idArray.forEach(person => {
+          let choices = person.split(",")[1].trim();
+          if (choices == emp.employee) {
+            let personId = person.split(",")[0];
+
+            roleIdArray.forEach(role => {
+              let roleChoice = role.split(",")[1].trim();
+              if (roleChoice == emp.role) {
+                let roleId = role.split(",")[0];
+
+                const query = `UPDATE employee SET role_id = "${roleId}" WHERE id = ${personId};`;
+                connection.query(query, (err, res) => {
+                  if (err) throw err;
+                  console.log(`\n ${emp.employee}'s role successfully updated to ${emp.role}! \n`);
+    
+                  // Start program over
+                  init();
+                });
+              }
+            });
+          }
+        });
       });
     });
   });
