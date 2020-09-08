@@ -1,31 +1,27 @@
 // Empty arrays to check for duplication
-// const ids = [];
-// const emails = [];
-// const offices = [];
-// const githubs = [];
+const roles = [];
+const departments = [];
+const emails = [];
 
 // Validation functions
-const validateName = (name) => {
+const validateFirstName = (firstname) => {
     const namePattern = /^[a-zA-Z]+(?:\s[a-zA-Z]+)?$/;
-    if (!name) {
-        return "Please fill out all fields";
+    if (!firstname) {
+        return "Employee first name required";
     }
-    else if (!namePattern.test(name)) {
+    else if (!namePattern.test(firstname)) {
         return "Name must be letters only";
     }
     return true;
 };
 
-const validateId = (id) => {
-    const idPattern = /^[0-9]{3,10}$/;
-    if (!id) {
-        return "Please enter an ID";
+const validateLastName = (lastname) => {
+    const namePattern = /^[a-zA-Z]+(?:\s[a-zA-Z]+)?$/;
+    if (!lastname) {
+        return "Employee last name required";
     }
-    else if (ids.includes(id)) {
-        return "ID already used, please enter a unique ID";
-    }
-    else if (!idPattern.test(id)) {
-        return "ID must be 3-10 numbers in length";
+    else if (!namePattern.test(lastname)) {
+        return "Name must be letters only";
     }
     return true;
 };
@@ -44,78 +40,26 @@ const validateEmail = (email) => {
     return true;
 };
 
-const validateOffice = (office) => {
-    const officePattern = /^[0-9]{1,5}$/;
-    if (!office) {
-        return "Please enter an office number";
+const validateNumber = (number) => {
+    const numberPattern = /^[0-9]{1,5}$/;
+    if (!number) {
+        return "Salary must be entered";
     }
-    else if (!officePattern.test(office)) {
-        return "Office number must be 1-5 numbers in length";
-    }
-    return true;
-};
-
-const validateSchool = (school) => {
-    const schoolPattern = /^[a-zA-Z\s]+$/;
-    if (!school) {
-        return "Please enter a school";
-    }
-    else if (!schoolPattern.test(school)) {
-        return "School name must be letters only";
+    else if (!numberPattern.test(number)) {
+        return "Salary may not exceed 6 figures";
     }
     return true;
 };
 
-const manager = [
-    {
-        type: "input",
-        name: "name",
-        message: "What is your manager's name?",
-        validate: validateName
-    },
-    {
-        type: "input",
-        name: "id",
-        message: "What is your manager's id?",
-        validate: validateId
-    },
-    {
-        type: "input",
-        name: "email",
-        message: "What is your manager's email?",
-        validate: validateEmail
-    },
-    {
-        type: "input",
-        name: "office",
-        message: "What is your manager's office number?",
-        validate: validateOffice
-    },
-];
+const validateText = (text) => {
+    const textPattern = /^[a-zA-Z\s]+$/;
+    if (!text) {
+        return "This field is required";
+    }
+    else if (!textPattern.test(text)) {
+        return "This field must be letters only";
+    }
+    return true;
+};
 
-const intern = [
-    {
-        type: "input",
-        name: "name",
-        message: "What is your intern's name?",
-        validate: validateName
-    },
-    {
-        type: "input",
-        name: "id",
-        message: "What is your intern's id?",
-        validate: validateId
-    },
-    {
-        type: "input",
-        name: "email",
-        message: "What is your intern's email?",
-        validate: validateEmail
-    },
-    {
-        type: "input",
-        name: "school",
-        message: "What is your intern's school?",
-        validate: validateSchool
-    },
-];
+module.exports = { validateFirstName, validateLastName, validateNumber, validateText }

@@ -3,6 +3,7 @@ const inquirer = require("inquirer");
 const mysql = require("mysql");
 const consoleTable = require("console.table");
 const async = require("async");
+const { validateFirstName, validateLastName, validateNumber, validateText } = require("./utils/questions");
 
 // const { Employee, Role, Department } = require("./lib/Creators");
 // const questions = require("./utils/questions");
@@ -222,12 +223,14 @@ const addEmployee = () => {
           {
             type: "input",
             name: "firstname",
-            message: "What is the employee's first name?"
+            message: "What is the employee's first name?",
+            validate: validateFirstName
           },
           {
             type: "input",
             name: "lastname",
-            message: "What is the employee's last name?"
+            message: "What is the employee's last name?",
+            validate: validateLastName
           },
           {
             type: "list",
@@ -290,12 +293,14 @@ const addNewRole = () => {
       {
         type: "input",
         name: "role",
-        message: "What is the title of the role you want to add?"
+        message: "What is the title of the role you want to add?",
+        validate: validateText
       },
       {
         type: "input",
         name: "salary",
-        message: "What is the salary of this role?"
+        message: "What is the salary of this role?",
+        validate: validateNumber
       },
       {
         type: "list",
@@ -327,7 +332,8 @@ const addNewDepartment = () => {
   inquirer.prompt({
     name: "department",
     type: "input",
-    message: "Which department would you like to create?"
+    message: "Which department would you like to create?",
+    validate: validateText
   }).then((answer) => {
     let newDeptQuery = `INSERT INTO department (name) VALUE ("${answer.department}");`;
     connection.query(newDeptQuery, (err, res) => {
