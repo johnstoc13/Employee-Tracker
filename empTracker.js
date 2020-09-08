@@ -30,6 +30,7 @@ function init() {
     choices: [
       "View All Employees",
       "View Departments",
+      "View Roles",
       "View Manager Database",
       "Add Employee",
       "Add New Role",
@@ -50,6 +51,11 @@ function init() {
         case "View Departments":
           // COMPLETE!!!
           viewDepartments();
+          break;
+
+        case "View Roles":
+          // COMPLETE!!!
+          viewRoles();
           break;
 
         case "View Manager Database":
@@ -106,6 +112,7 @@ const viewAll = () => {
 // Query to view all departments
 const viewDepartments = () => {
 
+  let deptArray = [];
   let query = 'SELECT name AS department FROM department;';
   connection.query(query, function (err, res) {
     if (err) throw err;
@@ -121,10 +128,7 @@ const viewDepartments = () => {
         if (err) throw err;
         console.log("\n");
         console.table(res);
-
-        // ********** Could add conditional here to say 
-        // "No roles yet assigned to this DEPT"
-        // if no data   **********
+        // ********** Could add conditional here to say "No roles yet assigned to this DEPT" if no data **********
 
         // Start program over
         init();
@@ -132,6 +136,29 @@ const viewDepartments = () => {
     });
   });
 };
+
+const viewRoles = () => {
+
+  let roleArray = [];
+  connection.query('SELECT title FROM role', function (err, res) {
+    if (err) throw err;
+    roleArray = res.map(obj => obj.title);
+    inquirer.prompt({
+      name: "role",
+      type: "list",
+      message: "Which role would you like to view?",
+      choices: roleArray
+    }).then((res) => {
+      let query = `SELECT role.title AS Title, e.first_name AS "First Name", e.last_name AS "Last Name", role.salary AS Salary, IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager, department.name AS Department FROM employee e LEFT JOIN employee m ON e.manager_id = m.id LEFT JOIN role ON e.role_id = role.id LEFT JOIN Department ON role.department_id = department.id WHERE role.title = "${res.role}";`;
+      connection.query(query, function (err, res) {
+        if (err) throw err;
+        console.log("\n");
+        console.table(res);
+        init();
+      })
+    })
+  })
+}
 
 // Query to view all employees by manager
 const viewManagers = () => {
@@ -161,9 +188,9 @@ const viewManagers = () => {
 
 // ******* NOT USING CURRENTLY *******
 // Prompt user for questions
-const promptQuestions = (type) => {
-  return inquirer.prompt(questions[type]);
-};
+// const promptQuestions = (type) => {
+//   return inquirer.prompt(questions[type]);
+// };
 
 const addEmployee = () => {
 
