@@ -1,10 +1,11 @@
+// Declare variables needed
 const inquirer = require("inquirer");
 const mysql = require("mysql");
-const consoleTable = require("console.table")
+const consoleTable = require("console.table");
 const async = require("async");
 
-const { Employee, Role, Department } = require("./lib/Creators");
-const questions = require("./utils/questions");
+// const { Employee, Role, Department } = require("./lib/Creators");
+// const questions = require("./utils/questions");
 
 const roleQuery = 'SELECT id, title FROM role;';
 const managerQuery = ('SELECT DISTINCT (concat(m.first_name, " " ,  m.last_name)) AS manager, e.manager_id AS id FROM employee e LEFT JOIN employee m ON e.manager_id = m.id WHERE e.manager_id IS NOT NULL;');
@@ -17,6 +18,7 @@ const connection = mysql.createConnection({
   database: 'empTracker_DB'
 });
 
+// Initialize connection at start
 connection.connect((err) => {
   if (err) throw err;
   init();
@@ -48,62 +50,50 @@ function init() {
       switch (answer.action) {
 
         case "View All Employees":
-          // COMPLETE!!!
           viewAll();
           break;
 
         case "View Departments":
-          // COMPLETE!!!
           viewDepartments();
           break;
 
         case "View Roles":
-          // COMPLETE!!!
           viewRoles();
           break;
 
         case "View Manager Database":
-          // COMPLETE!!!
           viewManagers();
           break;
 
         case "Add Employee":
-          // COMPLETE!!!
           addEmployee();
           break;
 
         case "Add New Role":
-          // COMPLETE!!!
           addNewRole();
           break;
 
         case "Add New Department":
-          // COMPLETE!!!
           addNewDepartment();
           break;
 
         case "Update Employee Role":
-          // COMPLETE!!!
           updateEmployeeRole();
           break;
 
         case "Update Employee Manager":
-          // COMPLETE!!!
           updateEmployeeManager();
           break;
 
         case "Remove Employee":
-          // COMPLETE!!!
           removeEmployee();
           break;
 
         case "View Department Budget":
-          // COMPLETE!!!
           viewDepartmentBudget();
           break;
 
         case "Exit":
-          // COMPLETE!!!
           connection.end();
           break;
       }
@@ -112,6 +102,7 @@ function init() {
 
 // Query to view all employees and data
 const viewAll = () => {
+
   let query = 'SELECT e.first_name AS "First Name", e.last_name AS "Last Name", role.title AS Title, role.salary AS Salary, IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager, department.name AS Department FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN Department ON role.department_id = department.id ORDER BY e.first_name ASC;';
   connection.query(query, function (err, res) {
     if (err) throw err;
@@ -130,6 +121,7 @@ const viewDepartments = () => {
   let query = 'SELECT name AS department FROM department;';
   connection.query(query, function (err, res) {
     if (err) throw err;
+    // Create department array
     deptArray = res.map(obj => (`${obj.department}`));
     inquirer.prompt({
       name: "department",
@@ -151,12 +143,14 @@ const viewDepartments = () => {
   });
 };
 
+// Query to view all employees by role/title
 const viewRoles = () => {
 
   let roleArray = [];
   connection.query('SELECT title FROM role', function (err, res) {
     if (err) throw err;
     roleArray = res.map(obj => obj.title);
+    // Prompt user for input
     inquirer.prompt({
       name: "role",
       type: "list",
@@ -168,11 +162,12 @@ const viewRoles = () => {
         if (err) throw err;
         console.log("\n");
         console.table(res);
+        // Start program over
         init();
-      })
-    })
-  })
-}
+      });
+    });
+  });
+};
 
 // Query to view all employees by manager
 const viewManagers = () => {
@@ -192,7 +187,6 @@ const viewManagers = () => {
         if (err) throw err;
         console.log("\n");
         console.table(res);
-
         // Start program over
         init();
       });
@@ -206,21 +200,23 @@ const viewManagers = () => {
 //   return inquirer.prompt(questions[type]);
 // };
 
+// Query to add a new employee to the database
 const addEmployee = () => {
 
   let mgrArray = [];
   let mgrIdArray = [];
+  // Get updated manager list for mgrArray
   connection.query(managerQuery, function (err, res) {
     if (err) throw err;
     mgrArray = res.map(obj => (`${obj.manager}`));
     mgrIdArray = res.map(obj => (`${obj.id}, ${obj.manager}`));
-    // console.log(mgrArray);
-    // console.log(mgrIdArray);
+    // Get updated role list for roleArray
     connection.query(roleQuery, (err, result) => {
       if (err) throw err;
       roleArray = result.map(obj => obj.title);
       roleIdArray = result.map(obj => `${obj.id}, ${obj.title}`);
 
+      // Prompt user for questions
       inquirer.prompt(
         [
           {
@@ -252,11 +248,13 @@ const addEmployee = () => {
             // Credit:  Ask BCS helped me find a way to compare choices by using SPLIT
             let choices = person.split(",")[1].trim();
             if (choices == emp.manager) {
+              // Get manager ID
               let managerId = person.split(",")[0];
 
               roleIdArray.forEach(role => {
                 let roleChoice = role.split(",")[1].trim();
                 if (roleChoice == emp.role) {
+                  // Get role ID
                   let roleId = role.split(",")[0];
 
                   // Query to add employee
@@ -277,14 +275,17 @@ const addEmployee = () => {
   });
 };
 
+// Query to add new role to database
 const addNewRole = () => {
 
   let deptArray = [];
   let deptIdArray = [];
+  // Get updated list of departments
   connection.query(deptQuery, function (err, res) {
     if (err) throw err;
     deptArray = res.map(obj => (`${obj.department}`));
     deptIdArray = res.map(obj => (`${obj.id}, ${obj.department}`));
+    // Prompt user for inputs
     inquirer.prompt([
       {
         type: "input",
@@ -305,6 +306,7 @@ const addNewRole = () => {
         deptIdArray.forEach(dept => {
           let choice = dept.split(",")[1].trim();
           if (choice == answer.department) {
+            // Declare department ID to use in query
             let deptId = dept.split(",")[0];
             const newRoleQuery = `INSERT INTO role (title, salary, department_id) VALUES ("${answer.role}", ${answer.salary}, ${deptId});`;
             connection.query(newRoleQuery, function (err, res) {
@@ -315,11 +317,12 @@ const addNewRole = () => {
               init();
             });
           }
-        })
+        });
       });
   });
 };
 
+// Query to add new department to database
 const addNewDepartment = () => {
   inquirer.prompt({
     name: "department",
@@ -332,52 +335,11 @@ const addNewDepartment = () => {
       console.log(`\n ${answer.department} department successfully added!\n`);
 
       init();
-    })
-  })
-};
-
-const removeEmployee = () => {
-  // Set up empty arrays to use later
-  let empArray = [];
-  let idArray = [];
-
-  // Query for IDs and Names in ASC order
-  const query = 'SELECT employee.id, concat(first_name, " ", last_name) AS employee FROM employee ORDER BY Employee ASC';
-  connection.query(query, (err, res) => {
-    if (err) throw err;
-    empArray = res.map(obj => obj.employee);
-    idArray = res.map(obj => (`${obj.id}, ${obj.employee}`));
-
-    // Ask user which employee to remove
-    inquirer.prompt({
-      name: "employee",
-      type: "list",
-      message: "Which employee would you like to remove?",
-      choices: empArray
-    }).then((emp) => {
-
-      // Then loop through all choices to match user choice
-      idArray.forEach(person => {
-        // Credit:  Ask BCS helped me find a way to compare choices by using SPLIT
-        let choices = person.split(",")[1].trim();
-        if (choices == emp.employee) {
-          let personId = person.split(",")[0];
-
-          // Query to remove the chosen employee
-          const query = `DELETE from employee WHERE id = ${personId};`;
-          connection.query(query, (err, res) => {
-            if (err) throw err;
-            console.log(`\n ${emp.employee} successfully removed! \n`);
-
-            // Start program over
-            init();
-          });
-        }
-      });
     });
   });
 };
 
+// Query to update employee's role
 const updateEmployeeRole = () => {
   // Set up empty arrays to use later
   let empArray = [];
@@ -440,6 +402,7 @@ const updateEmployeeRole = () => {
   });
 };
 
+// Query to update employee's manager
 const updateEmployeeManager = () => {
   // Set up empty arrays to use later
   let empArray = [];
@@ -454,6 +417,7 @@ const updateEmployeeManager = () => {
     empArray = res.map(obj => obj.employee);
     idArray = res.map(obj => (`${obj.id}, ${obj.employee}`));
 
+    // Get updated list of managers
     connection.query(managerQuery, (err, result) => {
       if (err) throw err;
       managerArray = result.map(obj => obj.manager);
@@ -479,11 +443,13 @@ const updateEmployeeManager = () => {
         idArray.forEach(person => {
           let choices = person.split(",")[1].trim();
           if (choices == emp.employee) {
+            // Declare employee ID
             let personId = person.split(",")[0];
 
             managerIdArray.forEach(role => {
               let mgrChoice = role.split(",")[1].trim();
               if (mgrChoice == emp.manager) {
+                // Declare manager ID
                 let managerId = role.split(",")[0];
 
                 const query = `UPDATE employee SET manager_id = "${managerId}" WHERE id = ${personId};`;
@@ -503,6 +469,50 @@ const updateEmployeeManager = () => {
   });
 };
 
+// Query to remove an employee from database
+const removeEmployee = () => {
+  // Set up empty arrays to use later
+  let empArray = [];
+  let idArray = [];
+
+  // Query for IDs and Names in ASC order
+  const query = 'SELECT employee.id, concat(first_name, " ", last_name) AS employee FROM employee ORDER BY Employee ASC';
+  connection.query(query, (err, res) => {
+    if (err) throw err;
+    empArray = res.map(obj => obj.employee);
+    idArray = res.map(obj => (`${obj.id}, ${obj.employee}`));
+
+    // Ask user which employee to remove
+    inquirer.prompt({
+      name: "employee",
+      type: "list",
+      message: "Which employee would you like to remove?",
+      choices: empArray
+    }).then((emp) => {
+
+      // Then loop through all choices to match user choice
+      idArray.forEach(person => {
+        // Credit:  Ask BCS helped me find a way to compare choices by using SPLIT
+        let choices = person.split(",")[1].trim();
+        if (choices == emp.employee) {
+          let personId = person.split(",")[0];
+
+          // Query to remove the chosen employee
+          const query = `DELETE from employee WHERE id = ${personId};`;
+          connection.query(query, (err, res) => {
+            if (err) throw err;
+            console.log(`\n ${emp.employee} successfully removed! \n`);
+
+            // Start program over
+            init();
+          });
+        }
+      });
+    });
+  });
+};
+
+// Query to view each department's budget
 const viewDepartmentBudget = () => {
   let deptArray = [];
   connection.query(deptQuery, function (err, res) {
@@ -524,7 +534,7 @@ const viewDepartmentBudget = () => {
         console.log(`\n`);
         console.table(totalBudget);
         init();
-      })
+      });
     });
   });
 };
