@@ -7,6 +7,8 @@ const { Employee, Role, Department } = require("./lib/Creators");
 const questions = require("./utils/questions");
 
 const roleQuery = 'SELECT id, title FROM role;';
+const managerQuery = ('SELECT DISTINCT (concat(m.first_name, " " ,  m.last_name)) AS manager, e.manager_id AS id FROM employee e LEFT JOIN employee m ON e.manager_id = m.id WHERE e.manager_id IS NOT NULL;');
+const deptQuery = 'SELECT id, name AS department FROM department;';
 
 const connection = mysql.createConnection({
   host: 'localhost',
@@ -36,7 +38,9 @@ function init() {
       "Add New Role",
       "Add New Department",
       "Update Employee Role",
+      "Update Employee Manager",
       "Remove Employee",
+      "View Department Budget",
       "Exit"
     ]
   })
@@ -83,9 +87,19 @@ function init() {
           updateEmployeeRole();
           break;
 
+        case "Update Employee Manager":
+          // COMPLETE!!!
+          updateEmployeeManager();
+          break;
+
         case "Remove Employee":
           // COMPLETE!!!
           removeEmployee();
+          break;
+
+        case "View Department Budget":
+          // COMPLETE!!!
+          viewDepartmentBudget();
           break;
 
         case "Exit":
@@ -196,8 +210,7 @@ const addEmployee = () => {
 
   let mgrArray = [];
   let mgrIdArray = [];
-  let query = ('SELECT DISTINCT (concat(m.first_name, " " ,  m.last_name)) AS manager, e.manager_id AS id FROM employee e LEFT JOIN employee m ON e.manager_id = m.id WHERE e.manager_id IS NOT NULL;');
-  connection.query(query, function (err, res) {
+  connection.query(managerQuery, function (err, res) {
     if (err) throw err;
     mgrArray = res.map(obj => (`${obj.manager}`));
     mgrIdArray = res.map(obj => (`${obj.id}, ${obj.manager}`));
@@ -268,8 +281,7 @@ const addNewRole = () => {
 
   let deptArray = [];
   let deptIdArray = [];
-  let query = 'SELECT id, name AS department FROM department;';
-  connection.query(query, function (err, res) {
+  connection.query(deptQuery, function (err, res) {
     if (err) throw err;
     deptArray = res.map(obj => (`${obj.department}`));
     deptIdArray = res.map(obj => (`${obj.id}, ${obj.department}`));
@@ -366,7 +378,6 @@ const removeEmployee = () => {
   });
 };
 
-
 const updateEmployeeRole = () => {
   // Set up empty arrays to use later
   let empArray = [];
@@ -425,6 +436,95 @@ const updateEmployeeRole = () => {
           }
         });
       });
+    });
+  });
+};
+
+const updateEmployeeManager = () => {
+  // Set up empty arrays to use later
+  let empArray = [];
+  let idArray = [];
+  let managerArray = [];
+  let managerIdArray = [];
+
+  // Query for IDs and Names in ASC order
+  const query = 'SELECT employee.id, concat(first_name, " ", last_name) AS employee FROM employee ORDER BY Employee ASC';
+  connection.query(query, (err, res) => {
+    if (err) throw err;
+    empArray = res.map(obj => obj.employee);
+    idArray = res.map(obj => (`${obj.id}, ${obj.employee}`));
+
+    connection.query(managerQuery, (err, result) => {
+      if (err) throw err;
+      managerArray = result.map(obj => obj.manager);
+      managerIdArray = result.map(obj => `${obj.id}, ${obj.manager}`);
+
+      // Ask user which employee to update
+      inquirer.prompt([
+        {
+          name: "employee",
+          type: "list",
+          message: "Which employee would you like to update?",
+          choices: empArray
+        },
+        {
+          name: "manager",
+          type: "list",
+          message: "Who is the employee's new manager?",
+          choices: managerArray
+        }
+      ]).then((emp) => {
+
+        // Then loop through all choices to match user choice
+        idArray.forEach(person => {
+          let choices = person.split(",")[1].trim();
+          if (choices == emp.employee) {
+            let personId = person.split(",")[0];
+
+            managerIdArray.forEach(role => {
+              let mgrChoice = role.split(",")[1].trim();
+              if (mgrChoice == emp.manager) {
+                let managerId = role.split(",")[0];
+
+                const query = `UPDATE employee SET manager_id = "${managerId}" WHERE id = ${personId};`;
+                connection.query(query, (err, res) => {
+                  if (err) throw err;
+                  console.log(`\n ${emp.employee}'s manager successfully updated to ${emp.manager}! \n`);
+
+                  // Start program over
+                  init();
+                });
+              }
+            });
+          }
+        });
+      });
+    });
+  });
+};
+
+const viewDepartmentBudget = () => {
+  let deptArray = [];
+  connection.query(deptQuery, function (err, res) {
+    if (err) throw err;
+    deptArray = res.map(obj => (`${obj.department}`));
+    inquirer.prompt(
+      {
+        name: "dept",
+        type: "list",
+        message: "Which department's budget would you like to view?",
+        choices: deptArray
+      }
+    ).then((ans) => {
+      // Credit:  https://www.w3schools.com/sql/sql_count_avg_sum.asp
+      let budgetQuery = `SELECT IFNULL(SUM(salary), "$0") AS "Total ${ans.dept} Department Budget" FROM employee e LEFT JOIN employee m ON e.manager_id = m.id LEFT JOIN role ON e.role_id = role.id LEFT JOIN Department ON role.department_id = department.id WHERE department.name = "${ans.dept}";`;
+      connection.query(budgetQuery, function (err, res) {
+        if (err) throw err;
+        let totalBudget = res.map(obj => obj);
+        console.log(`\n`);
+        console.table(totalBudget);
+        init();
+      })
     });
   });
 };
