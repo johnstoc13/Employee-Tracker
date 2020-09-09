@@ -4,12 +4,14 @@ const mysql = require("mysql");
 const consoleTable = require("console.table");
 const async = require("async");
 const { validateFirstName, validateLastName, validateNumber, validateText } = require("./utils/questions");
+// Credit:  https://voidcanvas.com/make-console-log-output-colorful-and-stylish-in-browser-node/
+var colors = require('colors');
 
 // const { Employee, Role, Department } = require("./lib/Creators");
 // const questions = require("./utils/questions");
 
-const roleQuery = 'SELECT id, title FROM role;';
 const managerQuery = ('SELECT DISTINCT (concat(m.first_name, " " ,  m.last_name)) AS manager, e.manager_id AS id FROM employee e LEFT JOIN employee m ON e.manager_id = m.id WHERE e.manager_id IS NOT NULL;');
+const roleQuery = 'SELECT id, title FROM role;';
 const deptQuery = 'SELECT id, name AS department FROM department;';
 
 const connection = mysql.createConnection({
@@ -22,8 +24,33 @@ const connection = mysql.createConnection({
 // Initialize connection at start
 connection.connect((err) => {
   if (err) throw err;
+  welcome();
   init();
 });
+
+function welcome() {
+  console.log(`\n`);
+  console.log(',-------------------------------------------------------------.'.green);
+  console.log('|                                                             |'.green);
+  console.log('|                       \\                                     |'.green);
+  console.log('|          ___________\\__\\____                                |'.green);
+  console.log('|         /           /  /                                    |'.green);
+  console.log('|        /              /         __  ________                |'.green);
+  console.log('|       /                        |  ||__    __|               |'.green);
+  console.log('|      /                         |  |   |  |                  |'.green);
+  console.log("|                                |  |   |  |                  |".green);
+  console.log('|          _____  _           ___|  |   |  |                  |'.green);
+  console.log('|         |  _  ||_|         |_____/    |__|                  |'.green);
+  console.log('|         | |_| | _  _ __  _   _   __ _  _   _  ____          |'.green);
+  console.log("|         |  _  || || '__|| | | | / _` || | | |/ ,__|         |".green);
+  console.log('|         | | | || || |   | /\\| || (_| || |_| |\\__, \\         |'.green);
+  console.log('|         |_| |_||_||_|   \\_/\\_/  \\__,_| \\__, ||____/         |'.green);
+  console.log('|                                        |___/                |'.green);
+  console.log('|                                                             |'.green);
+  console.log('|               E M P L O Y E E   D A T A B A S E             |'.green);
+  console.log("`-------------------------------------------------------------'".green);
+  console.log(`\n`);
+}
 
 // Main function to start program
 function init() {
@@ -43,6 +70,7 @@ function init() {
       "Update Employee Role",
       "Update Employee Manager",
       "Remove Employee",
+      "Remove Department",
       "View Department Budget",
       "Exit"
     ]
@@ -88,6 +116,10 @@ function init() {
 
         case "Remove Employee":
           removeEmployee();
+          break;
+
+        case "Remove Department":
+          removeDepartment();
           break;
 
         case "View Department Budget":
@@ -264,7 +296,7 @@ const addEmployee = () => {
                   const query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ("${emp.firstname}", "${emp.lastname}", ${roleId}, ${managerId})`;
                   connection.query(query, function (err) {
                     if (err) throw err;
-                    console.log(`\n Added ${emp.firstname} ${emp.lastname} to the database! \n`);
+                    console.log(`\n Added ${emp.firstname} ${emp.lastname} to the database! \n`.green);
 
                     // Start program over
                     init();
@@ -316,7 +348,7 @@ const addNewRole = () => {
             const newRoleQuery = `INSERT INTO role (title, salary, department_id) VALUES ("${answer.role}", ${answer.salary}, ${deptId});`;
             connection.query(newRoleQuery, function (err, res) {
               if (err) throw err;
-              console.log(`\n Added ${answer.role} to the database! \n`);
+              console.log(`\n Added ${answer.role} to the database! \n`.green);
 
               // Start program over
               init();
@@ -338,7 +370,7 @@ const addNewDepartment = () => {
     let newDeptQuery = `INSERT INTO department (name) VALUE ("${answer.department}");`;
     connection.query(newDeptQuery, (err, res) => {
       if (err) throw err;
-      console.log(`\n ${answer.department} department successfully added!\n`);
+      console.log(`\n ${answer.department} department successfully added!\n`.green);
 
       init();
     });
@@ -394,7 +426,7 @@ const updateEmployeeRole = () => {
                 const query = `UPDATE employee SET role_id = "${roleId}" WHERE id = ${personId};`;
                 connection.query(query, (err, res) => {
                   if (err) throw err;
-                  console.log(`\n ${emp.employee}'s role successfully updated to ${emp.role}! \n`);
+                  console.log(`\n ${emp.employee}'s role successfully updated to ${emp.role}! \n`.green);
 
                   // Start program over
                   init();
@@ -461,7 +493,7 @@ const updateEmployeeManager = () => {
                 const query = `UPDATE employee SET manager_id = "${managerId}" WHERE id = ${personId};`;
                 connection.query(query, (err, res) => {
                   if (err) throw err;
-                  console.log(`\n ${emp.employee}'s manager successfully updated to ${emp.manager}! \n`);
+                  console.log(`\n ${emp.employee}'s manager successfully updated to ${emp.manager}! \n`.green);
 
                   // Start program over
                   init();
@@ -507,7 +539,7 @@ const removeEmployee = () => {
           const query = `DELETE from employee WHERE id = ${personId};`;
           connection.query(query, (err, res) => {
             if (err) throw err;
-            console.log(`\n ${emp.employee} successfully removed! \n`);
+            console.log(`\n ${emp.employee} successfully removed! \n`.green);
 
             // Start program over
             init();
@@ -541,6 +573,78 @@ const viewDepartmentBudget = () => {
         console.table(totalBudget);
         init();
       });
+    });
+  });
+};
+
+// Query to remove a department from database
+const removeDepartment = () => {
+  let deptArray = [];
+  let deptId;
+  connection.query(deptQuery, function (err, res) {
+    if (err) throw err;
+    deptArray = res.map(obj => (`${obj.department}`));
+    deptIdArray = res.map(obj => (`${obj.id}, ${obj.department}`));
+
+    let roleDeptQuery = (`SELECT title, department_id FROM role;`);
+    connection.query(roleDeptQuery, function (err, res) {
+      roleArray = res.map(obj => (`${obj.title}`));
+      roleIdArray = res.map(obj => (`${obj.department_id}, ${obj.title}`));
+      roleIdsOnlyArray = res.map(obj => (`${obj.department_id}`));
+
+      inquirer.prompt([
+        {
+          name: "dept",
+          type: "list",
+          message: "Which department would you like to remove?",
+          choices: deptArray
+        },
+        {
+          name: "confirm",
+          type: "list",
+          message: "Are you sure you want to delete this department?",
+          choices: [
+            "YES",
+            "NO"
+          ]
+        }]).then((res) => {
+          if (res.confirm == "NO") {
+            console.log(`Your request has been cancelled!\n`.red);
+            init();
+          } else {
+            // Then loop through all choices to match user choice
+            let idChoice;
+            deptIdArray.forEach(dept => {
+              let choice = dept.split(",")[1].trim();
+              deptId = dept.split(",")[0];
+              if (choice == res.dept) {
+                idChoice = deptId;
+              }
+            });
+
+            // Look through roles to see if any are assigned to department selected
+            const foundArray = roleIdsOnlyArray.find(roleId => {
+              return (roleId === idChoice);
+            });
+
+            // If found, disallow user to delete the department
+            if (foundArray) {
+              console.log(`\nYou cannot delete a department with 'roles' assigned to it.\n`.red);
+              init();
+            }
+            else {
+              // Otherwise perform query to delete department
+              const query = `DELETE from department WHERE id = ${idChoice};`;
+              connection.query(query, (err, result) => {
+                if (err) throw err;
+                console.log(`\n ${res.dept} Department successfully removed! \n`.green);
+
+                // Start program over
+                init();
+              });
+            }
+          }
+        });
     });
   });
 };

@@ -41,7 +41,7 @@ const validateEmail = (email) => {
 };
 
 const validateNumber = (number) => {
-    const numberPattern = /^[0-9]{1,5}$/;
+    const numberPattern = /^[0-9]{1,6}$/;
     if (!number) {
         return "Salary must be entered";
     }
