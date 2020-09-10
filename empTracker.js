@@ -168,12 +168,8 @@ const viewDepartments = () => {
     connection.query(nextQuery, function (err, res) {
       if (err) throw err;
       checkArray = res.map(obj => (`${obj.department_id}`));
-      rolesArray = res.map(obj => (`${obj.id}, ${obj.department_id}`))
-      // console.log(rolesArray);
-
-
-
-    })
+      rolesArray = res.map(obj => (`${obj.id}, ${obj.department_id}`));
+    });
     inquirer.prompt({
       name: "department",
       type: "list",
@@ -193,26 +189,16 @@ const viewDepartments = () => {
         return (dept === idChoice);
       });
 
-      // console.log(idArray);
-      // console.log("idChoice", idChoice);
-      // console.log("check", checkArray);
-      // console.log(foundDept);
-      // ALL GOOD HERE UP    ^^^^^
-
       connection.query(`SELECT id from role WHERE department_id = ${idChoice}`, function (err, res) {
         if (err) throw err;
         let roles = res.map(obj => (`${obj.id}`));
-        // console.log("ANSWER", roles);
+       
         connection.query(`SELECT role_id from employee`, function (err, res) {
           if (err) throw err;
           let empArray = res.map(obj => (`${obj.role_id}`));
-          // console.log(empArray);
-  
+
           const finalCheck = empArray.some(emp => roles.includes(emp));
-          // console.log(empArray);
-          // console.log(roles);
-          // console.log(finalCheck);
-  
+        
           if (foundDept && finalCheck === true) {
             let query = `SELECT department.name AS Department, e.first_name AS "First Name", e.last_name AS "Last Name", role.title AS Title, role.salary AS Salary, IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id LEFT JOIN role ON e.role_id = role.id LEFT JOIN Department ON role.department_id = department.id WHERE department.id = "${idChoice}";`;
             connection.query(query, function (err, results) {
@@ -228,25 +214,8 @@ const viewDepartments = () => {
             console.log(`\nThis department has no data to view.\n`.red);
             init();
           }
-  
         });
-      })
-
-
-
-
-
-
-      // console.log("rolesArray", rolesArray);
-      // console.log("###", newChoice);
-      // console.log("roleId", roleId);
-
-      // const foundEmpInRole = rolesArray.find(role => {
-      //   return (role === newChoice)
-      // })
-
-
-
+      });
     });
   });
 };
@@ -263,7 +232,7 @@ const viewRoles = () => {
     connection.query(nextQuery, function (err, res) {
       if (err) throw err;
       checkArray = res.map(obj => (`${obj.role_id}`));
-    })
+    });
     // Prompt user for input
     inquirer.prompt({
       name: "role",
@@ -322,7 +291,7 @@ const viewManagers = () => {
           console.log("\n");
           console.table(res);
           init();
-        })
+        });
       }
       else {
         let query = `SELECT IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager, e.first_name AS "First Name", e.last_name AS "Last Name", role.title AS Title, role.salary AS Salary, department.name AS Department FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN Department ON role.department_id = department.id WHERE (concat(m.first_name, " ", m.last_name)) = "${res.manager}";`;
@@ -468,7 +437,7 @@ const addEmployee = () => {
                 });
               });
           }
-        })
+        });
     });
   });
 };
@@ -723,7 +692,7 @@ const removeEmployee = () => {
             if (choice == emp.employee) {
               mgrChoice = person.split(",")[0];
             }
-          })
+          });
           const foundManager = mgrIdsOnly.find(managerId => {
             return (managerId === personId);
           });
@@ -753,7 +722,7 @@ const removeEmployee = () => {
                 else {
                   init();
                 }
-              })
+              });
           }
           else {
             // Query to remove the chosen employee
@@ -875,7 +844,7 @@ const removeDepartment = () => {
                   else {
                     init();
                   }
-                })
+                });
             }
             else {
               // Otherwise perform query to delete department
@@ -972,7 +941,7 @@ const removeRole = () => {
                   else {
                     init();
                   }
-                })
+                });
             }
             else {
               // Otherwise perform query to delete department
