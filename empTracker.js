@@ -47,7 +47,7 @@ function welcome() {
   console.log('|         |_| |_||_||_|   \\_/\\_/  \\__,_| \\__, ||____/         |'.green);
   console.log('|                                        |___/                |'.green);
   console.log('|                                                             |'.green);
-  console.log('|               E M P L O Y E E   D A T A B A S E             |'.green);
+  console.log('|              E M P L O Y E E   D A T A B A S E              |'.green);
   console.log("`-------------------------------------------------------------'".green);
   console.log(`\n`);
 }
@@ -71,6 +71,7 @@ function init() {
       "Update Employee Manager",
       "Remove Employee",
       "Remove Department",
+      "Remove Role",
       "View Department Budget",
       "Exit"
     ]
@@ -120,6 +121,10 @@ function init() {
 
         case "Remove Department":
           removeDepartment();
+          break;
+
+        case "Remove Role":
+          removeRole();
           break;
 
         case "View Department Budget":
@@ -215,6 +220,16 @@ const viewManagers = () => {
       message: "Which manager database would you like to view?",
       choices: managerArray
     }).then((res) => {
+      if (res.manager === "N/A") {
+        let query = `SELECT IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager, e.first_name AS "First Name", e.last_name AS "Last Name", role.title AS Title, role.salary AS Salary, department.name AS Department FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN Department ON role.department_id = department.id WHERE e.manager_id IS NULL;`;
+        connection.query(query, function (err, res) {
+        if (err) throw err;
+        console.log("\n");
+        console.table(res);
+        init();
+        })
+      }
+      else {
       let query = `SELECT IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager, e.first_name AS "First Name", e.last_name AS "Last Name", role.title AS Title, role.salary AS Salary, department.name AS Department FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN Department ON role.department_id = department.id WHERE (concat(m.first_name, " ", m.last_name)) = "${res.manager}";`;
       connection.query(query, function (err, res) {
         if (err) throw err;
@@ -223,6 +238,7 @@ const viewManagers = () => {
         // Start program over
         init();
       });
+    }
     });
   });
 };
@@ -521,32 +537,42 @@ const removeEmployee = () => {
     idArray = res.map(obj => (`${obj.id}, ${obj.employee}`));
 
     // Ask user which employee to remove
-    inquirer.prompt({
-      name: "employee",
-      type: "list",
-      message: "Which employee would you like to remove?",
-      choices: empArray
-    }).then((emp) => {
+    inquirer.prompt([
+      {
+        name: "employee",
+        type: "list",
+        message: "Which employee would you like to remove?",
+        choices: empArray
+      },
+      {
+        name: "confirm",
+        type: "list",
+        message: "Are you sure you want to delete this employee?",
+        choices: [
+          "YES",
+          "NO"
+        ]
+      }]).then((emp) => {
 
-      // Then loop through all choices to match user choice
-      idArray.forEach(person => {
-        // Credit:  Ask BCS helped me find a way to compare choices by using SPLIT
-        let choices = person.split(",")[1].trim();
-        if (choices == emp.employee) {
-          let personId = person.split(",")[0];
+        // Then loop through all choices to match user choice
+        idArray.forEach(person => {
+          // Credit:  Ask BCS helped me find a way to compare choices by using SPLIT
+          let choices = person.split(",")[1].trim();
+          if (choices == emp.employee) {
+            let personId = person.split(",")[0];
 
-          // Query to remove the chosen employee
-          const query = `DELETE from employee WHERE id = ${personId};`;
-          connection.query(query, (err, res) => {
-            if (err) throw err;
-            console.log(`\n ${emp.employee} successfully removed! \n`.green);
+            // Query to remove the chosen employee
+            const query = `DELETE from employee WHERE id = ${personId};`;
+            connection.query(query, (err, res) => {
+              if (err) throw err;
+              console.log(`\n ${emp.employee} successfully removed! \n`.green);
 
-            // Start program over
-            init();
-          });
-        }
+              // Start program over
+              init();
+            });
+          }
+        });
       });
-    });
   });
 };
 
@@ -630,7 +656,31 @@ const removeDepartment = () => {
             // If found, disallow user to delete the department
             if (foundArray) {
               console.log(`\nYou cannot delete a department with 'roles' assigned to it.\n`.red);
-              init();
+              inquirer.prompt(
+                {
+                  name: "decision",
+                  type: "list",
+                  message: "What would you like to do now?",
+                  choices: [
+                    "View Department",
+                    "View Roles",
+                    "Remove Roles",
+                    "Start Over"
+                  ]
+                }).then((next) => {
+                  if (next.decision == "View Department") {
+                    viewDepartments();
+                  }
+                  else if (next.decistion == "View Roles") {
+                    viewRoles();
+                  }
+                  else if (next.decision == "Remove Roles") {
+                    removeRole();
+                  }
+                  else {
+                    init();
+                  }
+                })
             }
             else {
               // Otherwise perform query to delete department
@@ -638,6 +688,103 @@ const removeDepartment = () => {
               connection.query(query, (err, result) => {
                 if (err) throw err;
                 console.log(`\n ${res.dept} Department successfully removed! \n`.green);
+
+                // Start program over
+                init();
+              });
+            }
+          }
+        });
+    });
+  });
+};
+
+// Query to remove a role from database
+const removeRole = () => {
+  let roleArray = [];
+  let roleId;
+  connection.query(roleQuery, function (err, res) {
+    if (err) throw err;
+    roleArray = res.map(obj => (`${obj.title}`));
+    roleIdArray = res.map(obj => (`${obj.id}, ${obj.title}`));
+
+    let empRoleQuery = (`SELECT concat(first_name, " ", last_name) AS name, role_id FROM employee;`);
+    connection.query(empRoleQuery, function (err, res) {
+      if (err) throw err;
+      empArray = res.map(obj => (`${obj.name}`));
+      empIdArray = res.map(obj => (`${obj.role_id}, ${obj.name}`));
+      empIdsOnlyArray = res.map(obj => (`${obj.role_id}`));
+
+      inquirer.prompt([
+        {
+          name: "role",
+          type: "list",
+          message: "Which role would you like to remove?",
+          choices: roleArray
+        },
+        {
+          name: "confirm",
+          type: "list",
+          message: "Are you sure you want to delete this role?",
+          choices: [
+            "YES",
+            "NO"
+          ]
+        }]).then((res) => {
+          if (res.confirm == "NO") {
+            console.log(`Your request has been cancelled!\n`.red);
+            init();
+          } else {
+            // Then loop through all choices to match user choice
+            let idChoice;
+            roleIdArray.forEach(role => {
+              let choice = role.split(",")[1].trim();
+              roleId = role.split(",")[0];
+              if (choice == res.role) {
+                idChoice = roleId;
+              }
+            });
+
+            // Look through roles to see if any are assigned to department selected
+            const foundArray = empIdsOnlyArray.find(empId => {
+              return (empId === idChoice);
+            });
+
+            // If found, disallow user to delete the department
+            if (foundArray) {
+              console.log(`\nYou cannot delete a role with 'employees' assigned to it.\n`.red);
+              inquirer.prompt(
+                {
+                  name: "decision",
+                  type: "list",
+                  message: "What would you like to do now?",
+                  choices: [
+                    "View Roles",
+                    "View All Employees",
+                    "Remove Employee",
+                    "Start Over"
+                  ]
+                }).then((next) => {
+                  if (next.decision == "View Roles") {
+                    viewRoles();
+                  }
+                  else if (next.decision == "View All Employees") {
+                    viewAll();
+                  }
+                  else if (next.decision == "Remove Employee") {
+                    removeEmployee();
+                  }
+                  else {
+                    init();
+                  }
+                })
+            }
+            else {
+              // Otherwise perform query to delete department
+              const query = `DELETE from role WHERE id = ${idChoice};`;
+              connection.query(query, (err, result) => {
+                if (err) throw err;
+                console.log(`\n ${res.role} role successfully removed! \n`.green);
 
                 // Start program over
                 init();
