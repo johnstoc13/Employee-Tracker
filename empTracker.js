@@ -157,27 +157,55 @@ const viewAll = () => {
 const viewDepartments = () => {
 
   let deptArray = [];
-  let query = 'SELECT name AS department FROM department;';
+  let query = 'SELECT id, name AS department FROM department;';
   connection.query(query, function (err, res) {
     if (err) throw err;
     // Create department array
     deptArray = res.map(obj => (`${obj.department}`));
+    idArray = res.map(obj => (`${obj.id}, ${obj.department}`));
+    let nextQuery = 'SELECT department_id from role';
+    connection.query(nextQuery, function (err, res) {
+      if (err) throw err;
+      checkArray = res.map(obj => (`${obj.department_id}`));
+    })
     inquirer.prompt({
       name: "department",
       type: "list",
       message: "Which department would you like to view?",
       choices: deptArray
     }).then((res) => {
-      let query = `SELECT department.name AS Department, e.first_name AS "First Name", e.last_name AS "Last Name", role.title AS Title, role.salary AS Salary, IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id LEFT JOIN role ON e.role_id = role.id LEFT JOIN Department ON role.department_id = department.id WHERE department.name = "${res.department}";`;
-      connection.query(query, function (err, res) {
-        if (err) throw err;
-        console.log("\n");
-        console.table(res);
-        // ********** Could add conditional here to say "No roles yet assigned to this DEPT" if no data **********
-
-        // Start program over
-        init();
+      let idChoice;
+      idArray.forEach(dept => {
+        let choice = dept.split(",")[1].trim();
+        deptId = dept.split(",")[0];
+        if (choice == res.department) {
+          idChoice = deptId;
+        }
       });
+      // console.log("#2", idChoice);
+      // console.log("#3", checkArray);
+
+      const foundDept = checkArray.find(dept => {
+        return (dept === idChoice);
+      });
+
+      if (foundDept) {
+        // console.log("THIS DEPARTMENT IS OK TO VIEW!!!");
+        let query = `SELECT department.name AS Department, e.first_name AS "First Name", e.last_name AS "Last Name", role.title AS Title, role.salary AS Salary, IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id LEFT JOIN role ON e.role_id = role.id LEFT JOIN Department ON role.department_id = department.id WHERE department.name = "${res.department}";`;
+        connection.query(query, function (err, res) {
+          if (err) throw err;
+          console.log("\n");
+          console.table(res);
+          // ********** Could add conditional here to say "No roles yet assigned to this DEPT" if no data **********
+  
+          // Start program over
+          init();
+        });
+      }
+      else {
+        console.log(`\nThe ${res.department} Department has no data to view.\n`.red);
+        init();        
+      }
     });
   });
 };
@@ -379,19 +407,9 @@ const addEmployee = () => {
                     });
                   }
                 });
-
-
               });
-
-
-
-
-
           }
         })
-
-
-
     });
   });
 };
