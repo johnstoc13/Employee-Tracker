@@ -182,21 +182,17 @@ const viewDepartments = () => {
           idChoice = deptId;
         }
       });
-      // console.log("#2", idChoice);
-      // console.log("#3", checkArray);
 
       const foundDept = checkArray.find(dept => {
         return (dept === idChoice);
       });
 
       if (foundDept) {
-        // console.log("THIS DEPARTMENT IS OK TO VIEW!!!");
         let query = `SELECT department.name AS Department, e.first_name AS "First Name", e.last_name AS "Last Name", role.title AS Title, role.salary AS Salary, IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id LEFT JOIN role ON e.role_id = role.id LEFT JOIN Department ON role.department_id = department.id WHERE department.name = "${res.department}";`;
         connection.query(query, function (err, res) {
           if (err) throw err;
           console.log("\n");
           console.table(res);
-          // ********** Could add conditional here to say "No roles yet assigned to this DEPT" if no data **********
 
           // Start program over
           init();
@@ -297,12 +293,6 @@ const viewManagers = () => {
   });
 };
 
-// ******* NOT USING CURRENTLY *******
-// Prompt user for questions
-// const promptQuestions = (type) => {
-//   return inquirer.prompt(questions[type]);
-// };
-
 // Query to add a new employee to the database
 const addEmployee = () => {
 
@@ -313,8 +303,7 @@ const addEmployee = () => {
     if (err) throw err;
     empArray = res.map(obj => (`${obj.name}`));
     empIdArray = res.map(obj => (`${obj.id}, ${obj.name}`));
-    // console.log("#1", empArray);
-    // console.log("#2", empIdArray);
+
     // Get updated role list for roleArray
     connection.query(roleQuery, (err, result) => {
       if (err) throw err;
@@ -669,10 +658,6 @@ const removeEmployee = () => {
           "NO"
         ]
       }]).then((emp) => {
-
-        // console.log("#2", emp.employee);
-        // console.log("#3", mgrIdArray);
-        // console.log("#4", idArray);
         if (emp.confirm == "NO") {
           console.log(`\nYour request has been cancelled!\n`.red);
           init();
@@ -687,7 +672,6 @@ const removeEmployee = () => {
             }
           });
           // Look through roles to see if any are assigned to department selected
-          // console.log("My Array", mgrIdArray);
           let mgrChoice;
           mgrIdArray.forEach(person => {
             let choice = person.split(",")[1].trim();
@@ -696,13 +680,8 @@ const removeEmployee = () => {
             }
           })
           const foundManager = mgrIdsOnly.find(managerId => {
-            // console.log(mgrIdsOnly);
-            // console.log("THIS", managerId);
-            // console.log("THAT", personId);
             return (managerId === personId);
           });
-          // console.log("####", foundManager);
-          // console.log("IDDDD", personId);
           if (foundManager) {
             console.log(`\nYou cannot delete a management employee with 'employees' assigned to them.\n`.red);
             inquirer.prompt(
@@ -720,7 +699,7 @@ const removeEmployee = () => {
                 if (next.decision == "View Manager Database") {
                   viewManagers();
                 }
-                else if (next.decistion == "View All Employees") {
+                else if (next.decision == "View All Employees") {
                   viewAll();
                 }
                 else if (next.decision == "Update Employee Manager") {
@@ -732,7 +711,6 @@ const removeEmployee = () => {
               })
           }
           else {
-            // console.log("OK TO REMOVE!");
             // Query to remove the chosen employee
             const query = `DELETE from employee WHERE id = ${personId};`;
             connection.query(query, (err, res) => {
