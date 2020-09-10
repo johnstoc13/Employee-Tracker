@@ -13,6 +13,7 @@ var colors = require('colors');
 const managerQuery = ('SELECT DISTINCT (concat(m.first_name, " " ,  m.last_name)) AS manager, e.manager_id AS id FROM employee e LEFT JOIN employee m ON e.manager_id = m.id WHERE e.manager_id IS NOT NULL;');
 const roleQuery = 'SELECT id, title FROM role;';
 const deptQuery = 'SELECT id, name AS department FROM department;';
+const empQuery = 'SELECT id, (concat(first_name, " ", last_name)) AS name FROM employee;';
 
 const connection = mysql.createConnection({
   host: 'localhost',
@@ -223,22 +224,22 @@ const viewManagers = () => {
       if (res.manager === "N/A") {
         let query = `SELECT IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager, e.first_name AS "First Name", e.last_name AS "Last Name", role.title AS Title, role.salary AS Salary, department.name AS Department FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN Department ON role.department_id = department.id WHERE e.manager_id IS NULL;`;
         connection.query(query, function (err, res) {
-        if (err) throw err;
-        console.log("\n");
-        console.table(res);
-        init();
+          if (err) throw err;
+          console.log("\n");
+          console.table(res);
+          init();
         })
       }
       else {
-      let query = `SELECT IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager, e.first_name AS "First Name", e.last_name AS "Last Name", role.title AS Title, role.salary AS Salary, department.name AS Department FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN Department ON role.department_id = department.id WHERE (concat(m.first_name, " ", m.last_name)) = "${res.manager}";`;
-      connection.query(query, function (err, res) {
-        if (err) throw err;
-        console.log("\n");
-        console.table(res);
-        // Start program over
-        init();
-      });
-    }
+        let query = `SELECT IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager, e.first_name AS "First Name", e.last_name AS "Last Name", role.title AS Title, role.salary AS Salary, department.name AS Department FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN Department ON role.department_id = department.id WHERE (concat(m.first_name, " ", m.last_name)) = "${res.manager}";`;
+        connection.query(query, function (err, res) {
+          if (err) throw err;
+          console.log("\n");
+          console.table(res);
+          // Start program over
+          init();
+        });
+      }
     });
   });
 };
@@ -252,76 +253,145 @@ const viewManagers = () => {
 // Query to add a new employee to the database
 const addEmployee = () => {
 
-  let mgrArray = [];
-  let mgrIdArray = [];
-  // Get updated manager list for mgrArray
-  connection.query(managerQuery, function (err, res) {
+  let empArray = [];
+  let empIdArray = [];
+  // Get updated manager list for empArray
+  connection.query(empQuery, function (err, res) {
     if (err) throw err;
-    mgrArray = res.map(obj => (`${obj.manager}`));
-    mgrIdArray = res.map(obj => (`${obj.id}, ${obj.manager}`));
+    empArray = res.map(obj => (`${obj.name}`));
+    empIdArray = res.map(obj => (`${obj.id}, ${obj.name}`));
+    // console.log("#1", empArray);
+    // console.log("#2", empIdArray);
     // Get updated role list for roleArray
     connection.query(roleQuery, (err, result) => {
       if (err) throw err;
       roleArray = result.map(obj => obj.title);
       roleIdArray = result.map(obj => `${obj.id}, ${obj.title}`);
 
-      // Prompt user for questions
+      // Find out if employee has a manager assigned
       inquirer.prompt(
-        [
-          {
-            type: "input",
-            name: "firstname",
-            message: "What is the employee's first name?",
-            validate: validateFirstName
-          },
-          {
-            type: "input",
-            name: "lastname",
-            message: "What is the employee's last name?",
-            validate: validateLastName
-          },
-          {
-            type: "list",
-            name: "role",
-            message: "What is the employee's role?",
-            choices: roleArray
-          },
-          {
-            type: "list",
-            name: "manager",
-            message: "Who is the employee's manager?",
-            choices: mgrArray
-          }
-        ])
-        .then((emp) => {
-
-          mgrIdArray.forEach(person => {
-            // Credit:  Ask BCS helped me find a way to compare choices by using SPLIT
-            let choices = person.split(",")[1].trim();
-            if (choices == emp.manager) {
-              // Get manager ID
-              let managerId = person.split(",")[0];
-
-              roleIdArray.forEach(role => {
-                let roleChoice = role.split(",")[1].trim();
-                if (roleChoice == emp.role) {
-                  // Get role ID
-                  let roleId = role.split(",")[0];
-
-                  // Query to add employee
-                  const query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ("${emp.firstname}", "${emp.lastname}", ${roleId}, ${managerId})`;
-                  connection.query(query, function (err) {
-                    if (err) throw err;
-                    console.log(`\n Added ${emp.firstname} ${emp.lastname} to the database! \n`.green);
-
-                    // Start program over
-                    init();
-                  });
+        {
+          type: "list",
+          name: "haveManager",
+          message: "Does this employee have a manager?",
+          choices: [
+            "YES",
+            "NO"
+          ]
+        }).then((res) => {
+          if (res.haveManager == "YES") {
+            // Prompt user for questions
+            inquirer.prompt(
+              [
+                {
+                  type: "input",
+                  name: "firstname",
+                  message: "What is the employee's first name?",
+                  validate: validateFirstName
+                },
+                {
+                  type: "input",
+                  name: "lastname",
+                  message: "What is the employee's last name?",
+                  validate: validateLastName
+                },
+                {
+                  type: "list",
+                  name: "role",
+                  message: "What is the employee's role?",
+                  choices: roleArray
+                },
+                {
+                  type: "list",
+                  name: "manager",
+                  message: "Who is the employee's manager?",
+                  choices: empArray
                 }
+              ])
+              .then((emp) => {
+
+                empIdArray.forEach(person => {
+                  // Credit:  Ask BCS helped me find a way to compare choices by using SPLIT
+                  let choices = person.split(",")[1].trim();
+                  if (choices == emp.manager) {
+                    // Get manager ID
+                    let managerId = person.split(",")[0];
+
+                    roleIdArray.forEach(role => {
+                      let roleChoice = role.split(",")[1].trim();
+                      if (roleChoice == emp.role) {
+                        // Get role ID
+                        let roleId = role.split(",")[0];
+
+                        // Query to add employee
+                        const query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ("${emp.firstname}", "${emp.lastname}", ${roleId}, ${managerId})`;
+                        connection.query(query, function (err) {
+                          if (err) throw err;
+                          console.log(`\n Added ${emp.firstname} ${emp.lastname} to the database! \n`.green);
+
+                          // Start program over
+                          init();
+                        });
+                      }
+                    });
+                  }
+                });
               });
-            }
-          });
-        });
+          }
+          else {
+            // Prompt user for questions
+            inquirer.prompt(
+              [
+                {
+                  type: "input",
+                  name: "firstname",
+                  message: "What is the employee's first name?",
+                  validate: validateFirstName
+                },
+                {
+                  type: "input",
+                  name: "lastname",
+                  message: "What is the employee's last name?",
+                  validate: validateLastName
+                },
+                {
+                  type: "list",
+                  name: "role",
+                  message: "What is the employee's role?",
+                  choices: roleArray
+                }
+              ])
+              .then((emp) => {
+                roleIdArray.forEach(role => {
+                  let roleChoice = role.split(",")[1].trim();
+                  if (roleChoice == emp.role) {
+                    // Get role ID
+                    let roleId = role.split(",")[0];
+
+                    // Query to add employee
+                    const query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ("${emp.firstname}", "${emp.lastname}", ${roleId}, null)`;
+                    connection.query(query, function (err) {
+                      if (err) throw err;
+                      console.log(`\n Added ${emp.firstname} ${emp.lastname} to the database! \n`.green);
+
+                      // Start program over
+                      init();
+                    });
+                  }
+                });
+
+
+              });
+
+
+
+
+
+          }
+        })
+
+
+
     });
   });
 };
@@ -528,13 +598,16 @@ const removeEmployee = () => {
   // Set up empty arrays to use later
   let empArray = [];
   let idArray = [];
+  let mgrIdArray = [];
 
   // Query for IDs and Names in ASC order
-  const query = 'SELECT employee.id, concat(first_name, " ", last_name) AS employee FROM employee ORDER BY Employee ASC';
+  const query = 'SELECT employee.id, concat(first_name, " ", last_name) AS employee, manager_id FROM employee ORDER BY Employee ASC';
   connection.query(query, (err, res) => {
     if (err) throw err;
     empArray = res.map(obj => obj.employee);
     idArray = res.map(obj => (`${obj.id}, ${obj.employee}`));
+    mgrIdArray = res.map(obj => (`${obj.manager_id}, ${obj.employee}`));
+    mgrIdsOnly = res.map(obj => (`${obj.manager_id}`));
 
     // Ask user which employee to remove
     inquirer.prompt([
@@ -554,13 +627,69 @@ const removeEmployee = () => {
         ]
       }]).then((emp) => {
 
-        // Then loop through all choices to match user choice
-        idArray.forEach(person => {
-          // Credit:  Ask BCS helped me find a way to compare choices by using SPLIT
-          let choices = person.split(",")[1].trim();
-          if (choices == emp.employee) {
-            let personId = person.split(",")[0];
-
+        // console.log("#2", emp.employee);
+        // console.log("#3", mgrIdArray);
+        // console.log("#4", idArray);
+        if (emp.confirm == "NO") {
+          console.log(`\nYour request has been cancelled!\n`.red);
+          init();
+        } else {
+          // Then loop through all choices to match user choice
+          let personId;
+          idArray.forEach(person => {
+            // Credit:  Ask BCS helped me find a way to compare choices by using SPLIT
+            let choices = person.split(",")[1].trim();
+            if (choices == emp.employee) {
+              personId = person.split(",")[0];
+            }
+          });
+          // Look through roles to see if any are assigned to department selected
+          // console.log("My Array", mgrIdArray);
+          let mgrChoice;
+          mgrIdArray.forEach(person => {
+            let choice = person.split(",")[1].trim();
+            if (choice == emp.employee) {
+              mgrChoice = person.split(",")[0];
+            }
+          })
+          const foundManager = mgrIdsOnly.find(managerId => {
+            // console.log(mgrIdsOnly);
+            // console.log("THIS", managerId);
+            // console.log("THAT", personId);
+            return (managerId === personId);
+          });
+          // console.log("####", foundManager);
+          // console.log("IDDDD", personId);
+          if (foundManager) {
+            console.log(`\nYou cannot delete a management employee with 'employees' assigned to them.\n`.red);
+            inquirer.prompt(
+              {
+                name: "decision",
+                type: "list",
+                message: "What would you like to do now?",
+                choices: [
+                  "View Manager Database",
+                  "View All Employees",
+                  "Update Employee Manager",
+                  "Start Over"
+                ]
+              }).then((next) => {
+                if (next.decision == "View Manager Database") {
+                  viewManagers();
+                }
+                else if (next.decistion == "View All Employees") {
+                  viewAll();
+                }
+                else if (next.decision == "Update Employee Manager") {
+                  updateEmployeeManager();
+                }
+                else {
+                  init();
+                }
+              })
+          }
+          else {
+            // console.log("OK TO REMOVE!");
             // Query to remove the chosen employee
             const query = `DELETE from employee WHERE id = ${personId};`;
             connection.query(query, (err, res) => {
@@ -571,7 +700,7 @@ const removeEmployee = () => {
               init();
             });
           }
-        });
+        }
       });
   });
 };
