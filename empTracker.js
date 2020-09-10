@@ -157,16 +157,22 @@ const viewAll = () => {
 const viewDepartments = () => {
 
   let deptArray = [];
+  let rolesArray = [];
   let query = 'SELECT id, name AS department FROM department;';
   connection.query(query, function (err, res) {
     if (err) throw err;
     // Create department array
     deptArray = res.map(obj => (`${obj.department}`));
     idArray = res.map(obj => (`${obj.id}, ${obj.department}`));
-    let nextQuery = 'SELECT department_id from role';
+    let nextQuery = 'SELECT id, department_id from role';
     connection.query(nextQuery, function (err, res) {
       if (err) throw err;
       checkArray = res.map(obj => (`${obj.department_id}`));
+      rolesArray = res.map(obj => (`${obj.id}, ${obj.department_id}`))
+      // console.log(rolesArray);
+
+
+
     })
     inquirer.prompt({
       name: "department",
@@ -187,21 +193,60 @@ const viewDepartments = () => {
         return (dept === idChoice);
       });
 
-      if (foundDept) {
-        let query = `SELECT department.name AS Department, e.first_name AS "First Name", e.last_name AS "Last Name", role.title AS Title, role.salary AS Salary, IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id LEFT JOIN role ON e.role_id = role.id LEFT JOIN Department ON role.department_id = department.id WHERE department.name = "${res.department}";`;
-        connection.query(query, function (err, res) {
-          if (err) throw err;
-          console.log("\n");
-          console.table(res);
+      // console.log(idArray);
+      // console.log("idChoice", idChoice);
+      // console.log("check", checkArray);
+      // console.log(foundDept);
+      // ALL GOOD HERE UP    ^^^^^
 
-          // Start program over
-          init();
+      connection.query(`SELECT id from role WHERE department_id = ${idChoice}`, function (err, res) {
+        if (err) throw err;
+        let roles = res.map(obj => (`${obj.id}`));
+        // console.log("ANSWER", roles);
+        connection.query(`SELECT role_id from employee`, function (err, res) {
+          if (err) throw err;
+          let empArray = res.map(obj => (`${obj.role_id}`));
+          // console.log(empArray);
+  
+          const finalCheck = empArray.some(emp => roles.includes(emp));
+          // console.log(empArray);
+          // console.log(roles);
+          // console.log(finalCheck);
+  
+          if (foundDept && finalCheck === true) {
+            let query = `SELECT department.name AS Department, e.first_name AS "First Name", e.last_name AS "Last Name", role.title AS Title, role.salary AS Salary, IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id LEFT JOIN role ON e.role_id = role.id LEFT JOIN Department ON role.department_id = department.id WHERE department.id = "${idChoice}";`;
+            connection.query(query, function (err, results) {
+              if (err) throw err;
+              console.log("\n");
+              console.table(results);
+  
+              // Start program over
+              init();
+            });
+          }
+          else {
+            console.log(`\nThis department has no data to view.\n`.red);
+            init();
+          }
+  
         });
-      }
-      else {
-        console.log(`\nThe ${res.department} Department has no data to view.\n`.red);
-        init();
-      }
+      })
+
+
+
+
+
+
+      // console.log("rolesArray", rolesArray);
+      // console.log("###", newChoice);
+      // console.log("roleId", roleId);
+
+      // const foundEmpInRole = rolesArray.find(role => {
+      //   return (role === newChoice)
+      // })
+
+
+
     });
   });
 };
