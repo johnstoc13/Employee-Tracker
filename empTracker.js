@@ -197,14 +197,14 @@ const viewDepartments = () => {
           console.log("\n");
           console.table(res);
           // ********** Could add conditional here to say "No roles yet assigned to this DEPT" if no data **********
-  
+
           // Start program over
           init();
         });
       }
       else {
         console.log(`\nThe ${res.department} Department has no data to view.\n`.red);
-        init();        
+        init();
       }
     });
   });
@@ -214,9 +214,15 @@ const viewDepartments = () => {
 const viewRoles = () => {
 
   let roleArray = [];
-  connection.query('SELECT title FROM role', function (err, res) {
+  connection.query('SELECT id, title FROM role', function (err, res) {
     if (err) throw err;
     roleArray = res.map(obj => obj.title);
+    idArray = res.map(obj => `${obj.id}, ${obj.title}`);
+    let nextQuery = 'SELECT role_id from employee';
+    connection.query(nextQuery, function (err, res) {
+      if (err) throw err;
+      checkArray = res.map(obj => (`${obj.role_id}`));
+    })
     // Prompt user for input
     inquirer.prompt({
       name: "role",
@@ -224,14 +230,33 @@ const viewRoles = () => {
       message: "Which role would you like to view?",
       choices: roleArray
     }).then((res) => {
-      let query = `SELECT role.title AS Title, e.first_name AS "First Name", e.last_name AS "Last Name", role.salary AS Salary, IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager, department.name AS Department FROM employee e LEFT JOIN employee m ON e.manager_id = m.id LEFT JOIN role ON e.role_id = role.id LEFT JOIN Department ON role.department_id = department.id WHERE role.title = "${res.role}";`;
-      connection.query(query, function (err, res) {
-        if (err) throw err;
-        console.log("\n");
-        console.table(res);
-        // Start program over
-        init();
+      let idChoice;
+      idArray.forEach(role => {
+        let choice = role.split(",")[1].trim();
+        roleId = role.split(",")[0];
+        if (choice == res.role) {
+          idChoice = roleId;
+        }
       });
+
+      const foundRole = checkArray.find(role => {
+        return (role === idChoice);
+      });
+
+      if (foundRole) {
+        let query = `SELECT role.title AS Title, e.first_name AS "First Name", e.last_name AS "Last Name", role.salary AS Salary, IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager, department.name AS Department FROM employee e LEFT JOIN employee m ON e.manager_id = m.id LEFT JOIN role ON e.role_id = role.id LEFT JOIN Department ON role.department_id = department.id WHERE role.title = "${res.role}";`;
+        connection.query(query, function (err, res) {
+          if (err) throw err;
+          console.log("\n");
+          console.table(res);
+          // Start program over
+          init();
+        });
+      }
+      else {
+        console.log(`\nThe ${res.role} Role has no data to view.\n`.red);
+        init();
+      }
     });
   });
 };
