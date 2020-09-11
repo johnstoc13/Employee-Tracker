@@ -9,7 +9,7 @@ Tech Used: Javascript, Node.js, Inquirer.jS, MySQL, Console.table, and Colors.js
 
 ## Deployment
 
-A video demo of the working application can be viewed at: [Employee Tracker](https://obscure-plateau-29195.herokuapp.com/)
+A video demo of the working application can be viewed at: [Employee Tracker](https://youtu.be/M6csr1f4uBI)
 
 ## Resources
 
