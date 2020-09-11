@@ -176,7 +176,7 @@ const viewDepartments = () => {
       let idChoice;
       idArray.forEach(dept => {
         let choice = dept.split(",")[1].trim();
-        deptId = dept.split(",")[0];
+        let deptId = dept.split(",")[0];
         if (choice == res.department) {
           idChoice = deptId;
         }
