@@ -189,21 +189,21 @@ const viewDepartments = () => {
       connection.query(`SELECT id from role WHERE department_id = ${idChoice}`, function (err, res) {
         if (err) throw err;
         let roles = res.map(obj => (`${obj.id}`));
-       
+
         connection.query(`SELECT role_id from employee`, function (err, res) {
           if (err) throw err;
           let empArray = res.map(obj => (`${obj.role_id}`));
 
           // Credit:  https://stackoverflow.com/questions/16312528/check-if-an-array-contains-any-element-of-another-array-in-javascript
           const finalCheck = empArray.some(emp => roles.includes(emp));
-        
+
           if (foundDept && finalCheck === true) {
             let query = `SELECT department.name AS Department, e.first_name AS "First Name", e.last_name AS "Last Name", role.title AS Title, role.salary AS Salary, IFNULL((concat(m.first_name, " " ,  m.last_name)), "N/A") AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id LEFT JOIN role ON e.role_id = role.id LEFT JOIN Department ON role.department_id = department.id WHERE department.id = "${idChoice}";`;
             connection.query(query, function (err, results) {
               if (err) throw err;
               console.log("\n");
               console.table(results);
-  
+
               // Start program over
               init();
             });
@@ -592,45 +592,49 @@ const updateEmployeeManager = () => {
       managerIdArray = result.map(obj => `${obj.id}, ${obj.manager}`);
 
       // Ask user which employee to update
-      inquirer.prompt([
-        {
+      inquirer.prompt({
           name: "employee",
           type: "list",
           message: "Which employee would you like to update?",
           choices: empArray
-        },
-        {
-          name: "manager",
-          type: "list",
-          message: "Who is the employee's new manager?",
-          choices: managerArray
-        }
-      ]).then((emp) => {
+        }).then((emp) => {
 
         // Then loop through all choices to match user choice
+        let personId;
         idArray.forEach(person => {
           let choices = person.split(",")[1].trim();
           if (choices == emp.employee) {
             // Declare employee ID
-            let personId = person.split(",")[0];
-
-            managerIdArray.forEach(role => {
-              let mgrChoice = role.split(",")[1].trim();
-              if (mgrChoice == emp.manager) {
-                // Declare manager ID
-                let managerId = role.split(",")[0];
-
-                const query = `UPDATE employee SET manager_id = "${managerId}" WHERE id = ${personId};`;
-                connection.query(query, (err, res) => {
-                  if (err) throw err;
-                  console.log(`\n ${emp.employee}'s manager successfully updated to ${emp.manager}! \n`.green);
-
-                  // Start program over
-                  init();
-                });
-              }
-            });
+            personId = person.split(",")[0];
           }
+        });
+
+        // Remove employee from empArray (emp cannot manage themselves)
+        const availMgrArray = empArray.filter((val) => val != `${emp.employee}`);
+        console.log(availMgrArray);
+
+        inquirer.prompt({
+          name: "manager",
+          type: "list",
+          message: "Who is the employee's new manager?",
+          choices: availMgrArray
+        }).then((res) => {
+          idArray.forEach(role => {
+            let mgrChoice = role.split(",")[1].trim();
+            if (mgrChoice == res.manager) {
+              // Declare manager ID
+              let managerId = role.split(",")[0];
+  
+              const query = `UPDATE employee SET manager_id = "${managerId}" WHERE id = ${personId};`;
+              connection.query(query, (err, res) => {
+                if (err) throw err;
+                console.log(`\n ${emp.employee}'s manager successfully updated to ${mgrChoice}! \n`.green);
+  
+                // Start program over
+                init();
+              });
+            }
+          });
         });
       });
     });
