@@ -7,9 +7,6 @@ const { validateFirstName, validateLastName, validateNumber, validateText } = re
 // Credit:  https://voidcanvas.com/make-console-log-output-colorful-and-stylish-in-browser-node/
 var colors = require('colors');
 
-// const { Employee, Role, Department } = require("./lib/Creators");
-// const questions = require("./utils/questions");
-
 const managerQuery = ('SELECT DISTINCT (concat(m.first_name, " " ,  m.last_name)) AS manager, e.manager_id AS id FROM employee e LEFT JOIN employee m ON e.manager_id = m.id WHERE e.manager_id IS NOT NULL;');
 const roleQuery = 'SELECT id, title FROM role;';
 const deptQuery = 'SELECT id, name AS department FROM department;';
