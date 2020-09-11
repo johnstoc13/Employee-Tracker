@@ -1,8 +1,3 @@
-// Empty arrays to check for duplication
-const roles = [];
-const departments = [];
-const emails = [];
-
 // Validation functions
 const validateFirstName = (firstname) => {
     const namePattern = /^[a-zA-Z]+(?:\s[a-zA-Z]+)?$/;
@@ -22,20 +17,6 @@ const validateLastName = (lastname) => {
     }
     else if (!namePattern.test(lastname)) {
         return "Name must be letters only";
-    }
-    return true;
-};
-
-const validateEmail = (email) => {
-    const emailPattern = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
-    if (!email) {
-        return "Please enter an email";
-    }
-    else if (emails.includes(email)) {
-        return "Email already used, please enter a unique Email";
-    }
-    else if (!emailPattern.test(email)) {
-        return "Please enter a valid email address";
     }
     return true;
 };
