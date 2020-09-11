@@ -611,8 +611,6 @@ const updateEmployeeManager = () => {
 
         // Remove employee from empArray (emp cannot manage themselves)
         const availMgrArray = empArray.filter((val) => val != `${emp.employee}`);
-        console.log(availMgrArray);
-
         inquirer.prompt({
           name: "manager",
           type: "list",
