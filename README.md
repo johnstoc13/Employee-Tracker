@@ -26,7 +26,17 @@ Colors.js - https://www.npmjs.com/package/colors
 
 ## Images
 
+<img width="575" alt="Title" src="https://user-images.githubusercontent.com/66090689/92969929-d74b9200-f44b-11ea-81b8-419c1c825277.png">
 
+<img width="587" alt="View All" src="https://user-images.githubusercontent.com/66090689/92969931-d87cbf00-f44b-11ea-8724-4a2d17306ccc.png">
+
+<img width="597" alt="View Dept:Role" src="https://user-images.githubusercontent.com/66090689/92969933-d9adec00-f44b-11ea-844b-9c69957e95dc.png">
+
+<img width="576" alt="View Mgr:Budget" src="https://user-images.githubusercontent.com/66090689/92969935-db77af80-f44b-11ea-8784-cf82ab959242.png">
+
+<img width="406" alt="Validate" src="https://user-images.githubusercontent.com/66090689/92969941-dca8dc80-f44b-11ea-9747-f744f1c191fe.png">
+
+<img width="429" alt="Add Emp" src="https://user-images.githubusercontent.com/66090689/92969943-ddda0980-f44b-11ea-962d-c9de32772450.png">
 
 ## License
 
