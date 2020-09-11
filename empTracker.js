@@ -3,7 +3,7 @@ const inquirer = require("inquirer");
 const mysql = require("mysql");
 const consoleTable = require("console.table");
 const async = require("async");
-const { validateFirstName, validateLastName, validateNumber, validateText } = require("./utils/questions");
+const { validateFirstName, validateLastName, validateNumber, validateText } = require("./utils/validate");
 // Credit:  https://voidcanvas.com/make-console-log-output-colorful-and-stylish-in-browser-node/
 var colors = require('colors');
 
@@ -197,6 +197,7 @@ const viewDepartments = () => {
           if (err) throw err;
           let empArray = res.map(obj => (`${obj.role_id}`));
 
+          // Credit:  https://stackoverflow.com/questions/16312528/check-if-an-array-contains-any-element-of-another-array-in-javascript
           const finalCheck = empArray.some(emp => roles.includes(emp));
         
           if (foundDept && finalCheck === true) {
